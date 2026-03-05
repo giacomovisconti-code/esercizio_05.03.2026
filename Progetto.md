@@ -51,30 +51,19 @@ Microservices:
 
 # User Service
     - Spring Web
-
     - Spring Data JPA
-
     - Spring Security
-
     - MySQL Driver
-
     -Actuator
-
     - Eureka Client
-
     - OpenAPI
 
 # Product Service
     - Spring Web
-
     - Spring Data JPA
-
     - Database driver
-
     - Actuator
-
     - Eureka Client
-
     - OpenAPI
 
 # Inventory Service
