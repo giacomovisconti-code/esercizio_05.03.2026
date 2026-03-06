@@ -23,14 +23,16 @@
 |                 | Service       |
 |                 +---------------+
 
+
          Infrastructure:
          - Config Server
          - Eureka
          - Kafka + Zookeeper
          - PostgreSQL / MySQL
 
-Microservices:
-# Config Server
+
+# Microservices Dependecies:
+## Config Server
     - Spring Web
     
     - Config Server
@@ -39,17 +41,17 @@ Microservices:
     
     - Eureka Client
 
-# Eureka Server
+## Eureka Server
     - Eureka Server
     - Actuator
     - API Gateway
 
-# Spring Cloud Gateway
+## Spring Cloud Gateway
     - Eureka Discovery Client
     - Actuator
     - Security
 
-# User Service
+## User Service
     - Spring Web
     - Spring Data JPA
     - Spring Security
@@ -58,7 +60,7 @@ Microservices:
     - Eureka Client
     - OpenAPI
 
-# Product Service
+## Product Service
     - Spring Web
     - Spring Data JPA
     - Database driver
@@ -66,7 +68,7 @@ Microservices:
     - Eureka Client
     - OpenAPI
 
-# Inventory Service
+## Inventory Service
     - Spring Web
 
     - Spring Data JPA
@@ -79,7 +81,7 @@ Microservices:
 
     - OpenAPI
 
-# Order Service
+## Order Service
     - Spring Web
 
     - Spring Data JPA
@@ -96,9 +98,17 @@ Microservices:
 
     - OpenAPI
 
-# Notification Service
+## Notification Service
     - Spring Kafka
-
     - Actuator
-
     - Eureka Client
+
+# Servers Ports:
+- api-gateway: 8080
+- config-server: 8888
+- eureka-server: 8761
+- inventory-service: 8081
+- notification-service: 8082
+- order-service: 8083
+- product-service: 8084
+- user-service: 8085
