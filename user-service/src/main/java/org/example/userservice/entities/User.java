@@ -1,14 +1,14 @@
 package org.example.userservice.entities;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.userservice.Role;
-import org.hibernate.validator.constraints.Length;
+import org.example.userservice.enums.Role;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -19,16 +19,18 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @NotBlank(message = "Username cannot blank")
-    @Length(min = 3, message = "Username cannot be shoter than 3 chars")
+    @Column(unique = true)
     private String username;
 
-    @Column(nullable = false)
     private String password;
 
-    @NotBlank(message = "role cannot be blank")
+    @Enumerated(EnumType.STRING)
     private Role role;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime created_at;
 }
