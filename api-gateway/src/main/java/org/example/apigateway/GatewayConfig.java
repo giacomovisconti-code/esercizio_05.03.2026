@@ -12,6 +12,7 @@ public class GatewayConfig {
     @Bean
     public RouteLocator productService(RouteLocatorBuilder builder){
         return builder.routes().route(p-> p.path("/api/products/**")
+                .filters(f->f.stripPrefix(2))
                 .uri("lb://PRODUCT-SERVICE")).build();
     }
 
