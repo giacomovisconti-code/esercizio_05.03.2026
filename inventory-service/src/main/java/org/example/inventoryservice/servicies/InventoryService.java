@@ -89,6 +89,7 @@ public class InventoryService {
     }
 
     //? MODIFICA GIACENZA
+    // Modifica manuale
     public void modifyStock(StockChange stockChange) throws Exception {
 
         // Valido il Dto in entrata
@@ -101,6 +102,48 @@ public class InventoryService {
 
         // Salvo lo stock
         inventoryRepository.save(stock);
+    }
+
+    // Aggiunta (il numero inserito si somma alla giacenza corrente)
+    @Transactional
+    public void addStock(UUID productId, Long quantity){
+        Optional<Inventory> invOpt = inventoryRepository.findByProductId(productId);
+
+        // Verifico se è presente la giacenza per un prodotto con quel productId
+        if (invOpt.isEmpty()){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        Inventory inv = invOpt.get();
+
+        if (quantity <= 0){
+            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Inserire una quantità positiva.");
+        }
+
+        inv.setQuantity(inv.getQuantity() + quantity);
+        inventoryRepository.save(inv);
+
+    }
+
+    // Deduzione (il numero inserito si sottrae alla giacenza corrente)
+    @Transactional
+    public void deductStock(UUID productId, Long quantity){
+        Optional<Inventory> invOpt = inventoryRepository.findByProductId(productId);
+
+        // Verifico se è presente la giacenza per un prodotto con quel productId
+        if (invOpt.isEmpty()){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        Inventory inv = invOpt.get();
+
+        if (quantity > inv.getQuantity()){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"La quantità richiesta è inferiore alla giacenza." );
+        }
+
+        inv.setQuantity(inv.getQuantity() - quantity);
+        inventoryRepository.save(inv);
+
     }
 
     //? ELIMINAZIONE GIACENZA

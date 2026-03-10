@@ -3,6 +3,7 @@ package org.example.productservice.services;
 import jakarta.transaction.Transactional;
 import org.example.productservice.dto.ProductDto;
 import org.example.productservice.entities.Product;
+import org.example.productservice.openfeign.InventoryClient;
 import org.example.productservice.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private InventoryClient inventoryClient;
 
 
     private ModelMapper modelMapper = new ModelMapper();
@@ -84,6 +88,7 @@ public class ProductService {
     }
 
     //! CREATE
+    @Transactional
     public void createProduct(ProductDto productRequest) throws ResponseStatusException {
         if (productRepository.existsBySku(productRequest.getSku())){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Prodotto già registrato!");
@@ -95,6 +100,8 @@ public class ProductService {
 
         productRepository.save(p);
 
+        // Inizializzo la giacenza del prodotto a zero
+        inventoryClient.createStock(p.getSku());
     }
 
     //! UPDATE
@@ -112,7 +119,6 @@ public class ProductService {
         productValidation(productRequest);
 
         // Aggiorno il prodotto
-        p.setSku(productRequest.getSku());
         p.setName(productRequest.getName());
         p.setPrice(productRequest.getPrice());
         p.setDescription(productRequest.getDescription());
@@ -132,6 +138,8 @@ public class ProductService {
 
         // Se presente lo elimino
         productRepository.deleteBySku(sku);
+        //Elimino anche la giacenza
+        inventoryClient.deleteStock(sku);
 
     }
 

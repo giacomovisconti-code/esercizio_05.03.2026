@@ -28,6 +28,7 @@ public class GatewayConfig {
     @Bean
     public RouteLocator inventoryService(RouteLocatorBuilder builder){
         return builder.routes().route(p-> p.path("/api/inventory/**")
+                .filters(f->f.stripPrefix(2))
                 .uri("lb://INVENTORY-SERVICE")).build();
     }
 
