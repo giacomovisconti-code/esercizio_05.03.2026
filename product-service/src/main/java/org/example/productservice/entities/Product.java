@@ -6,10 +6,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.validator.constraints.Length;
 
 import java.math.BigDecimal;
+import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -24,6 +26,7 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "VARCHAR(36)")
+    @JdbcTypeCode(Types.VARCHAR)
     private UUID id;
 
     @NotBlank(message = "Product name cannot be blank")
@@ -32,6 +35,7 @@ public class Product {
 
     // Codice prodotto
     @Column(unique = true, columnDefinition = "VARCHAR(36)")
+    @JdbcTypeCode(Types.VARCHAR)
     private UUID sku;
 
     // Prezzo positivo, 6 cifre intere, 2 decimali
