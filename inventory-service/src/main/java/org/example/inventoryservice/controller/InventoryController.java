@@ -56,7 +56,7 @@ public class InventoryController {
     }
 
     //! UPDATE
-    @PutMapping("/update")
+    @PatchMapping("/update")
     public ResponseEntity<?> updateStock(@Valid @RequestBody StockChange stockChange) throws Exception {
         inventoryService.modifyStock(stockChange);
         return ResponseEntity.ok("Giacenza modificata correttamente");
