@@ -43,6 +43,7 @@ public class GatewayConfig {
     @Bean
     public RouteLocator ordersService(RouteLocatorBuilder builder){
         return builder.routes().route(p-> p.path("/api/orders/**")
+                .filters(f->f.stripPrefix(2))
                 .uri("lb://ORDER-SERVICE")).build();
     }
 

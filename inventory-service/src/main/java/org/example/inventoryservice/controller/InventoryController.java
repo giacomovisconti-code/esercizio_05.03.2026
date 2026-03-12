@@ -41,7 +41,7 @@ public class InventoryController {
 
     //! DEDUCTION
     // deduction stock
-    @PatchMapping("/deduction/{productId}")
+    @PutMapping("/deduction/{productId}")
     public ResponseEntity<String> deductionStock(@PathVariable("productId") UUID productId, @RequestParam("quantity") Long quantity){
         inventoryService.deductStock(productId, quantity);
         return ResponseEntity.ok("Giacenza ridotta con successo");

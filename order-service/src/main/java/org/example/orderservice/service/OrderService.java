@@ -1,0 +1,155 @@
+package org.example.orderservice.service;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import jakarta.transaction.Transactional;
+import org.example.orderservice.dto.order.OrderItemDraft;
+import org.example.orderservice.dto.order.ItemToOrder;
+import org.example.orderservice.dto.ProductDto;
+import org.example.orderservice.dto.StockRequest;
+import org.example.orderservice.entities.Order;
+import org.example.orderservice.entities.OrderItems;
+import org.example.orderservice.enums.OrderStatus;
+import org.example.orderservice.openfeign.InventoryClient;
+import org.example.orderservice.openfeign.ProductClient;
+import org.example.orderservice.repositories.OrderItemsRepository;
+import org.example.orderservice.repositories.OrderRepository;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+public class OrderService {
+
+    private final ModelMapper modelMapper = new ModelMapper();
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private OrderItemsRepository orderItemsRepository;
+
+    @Autowired
+    private InventoryClient inventoryClient;
+
+    @Autowired
+    private ProductClient productClient;
+
+    //? UTILS
+    // Circuit Breaker per product validation
+    @CircuitBreaker(name = "validation")
+    private ProductDto productValidation(ItemToOrder itemToOrder) throws Exception {
+        ProductDto p = productClient.getProduct(itemToOrder.getSku()).getBody();
+        if (p == null) throw new Exception("Prodotto non esistente! sku:" + itemToOrder.getSku());
+        return p;
+    }
+
+    // Circuit Breaker per stock validation
+    @CircuitBreaker(name = "validation")
+    private void stockValidation(ItemToOrder itemToOrder) throws Exception {
+        StockRequest stock = inventoryClient.getStock(itemToOrder.getSku()).getBody();
+        if (stock.getQuantity() < itemToOrder.getQuantity()) throw new Exception("Quantià prodotto richiesta inferiore alla giacenza");
+        inventoryClient.deductionStock(itemToOrder.getSku(), itemToOrder.getQuantity());
+
+    }
+
+    @CircuitBreaker(name = "validation")
+    private void stockReduction(OrderItems itemToOrder){
+        inventoryClient.deductionStock(itemToOrder.getProductId(), itemToOrder.getQuantity());
+    }
+
+    // Verifico l'esistenza e la disponibilità del prodotto
+    private List<OrderItemDraft> orderValidation(List<ItemToOrder> itemToOrder) throws Exception {
+
+        List<OrderItemDraft> orderDraftLs = new ArrayList<>();
+
+        // Per ogni elemento della lista
+        for (int i = 0; i < itemToOrder.size(); i++) {
+
+            // OpendFeign + CircuitBreaker - verifico l'esistenza del prodotto
+            ProductDto p = productValidation(itemToOrder.get(i));
+
+            // OpenFeign + CircuitBreaker - verifico la disponibilità in stock
+            stockValidation(itemToOrder.get(i));
+
+            // Se esistente e presente in magazzino popolo una lista ordine di bozza che ritorno (OrderItemsDraft)
+            OrderItemDraft orderItemDraft = new OrderItemDraft();
+            orderItemDraft.setQuantity(itemToOrder.get(i).getQuantity());
+            orderItemDraft.setProductId(p.getId());
+            orderItemDraft.setPrice(p.getPrice());
+            orderDraftLs.add(orderItemDraft);
+        }
+
+        return orderDraftLs;
+    }
+
+    private OrderItems convertOrderDraftToOrderItems(OrderItemDraft itemDraft){
+        OrderItems orderItems = new OrderItems();
+        orderItems.setUnitPrice(itemDraft.getPrice());
+        orderItems.setQuantity(itemDraft.getQuantity());
+        orderItems.setProductId(itemDraft.getProductId());
+        return orderItems;
+    }
+
+    //! GET ALL ORDERS
+    public List<Order> getAllOrders(){
+        return orderRepository.findAll();
+    }
+
+    //! GET SINGLE ORDER
+    public Order getSingleOrderById(UUID orderId){
+        Order o = orderRepository.findOrderById(orderId).orElseThrow(()->new RuntimeException("Nessun ordine trovato"));
+        return o;
+    }
+
+    //! CREATE ORDER
+    @Transactional
+    public void createOrder(List<ItemToOrder> itemList, UUID userId) throws Exception {
+
+        // Valido i prodotti inseriti
+        List<OrderItemDraft> orderDraft = orderValidation(itemList);
+
+        // Creo ordine
+        Order order = new Order();
+        order.setOrderStatus(OrderStatus.STATUS_BOZZA);
+
+        // Controllo ceh userID non sia null
+        if (userId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "UserId is null");
+
+        // Assegno all'ordine l'utente
+        order.setUserId(userId);
+        order.setId(UUID.randomUUID());
+
+        // Mappo la lista degli items prodotto in bozza nella lista da salvare nell'ordine
+        List<OrderItems> items = orderDraft.stream()
+                .map( itemDraft -> {
+                    OrderItems item = convertOrderDraftToOrderItems(itemDraft);
+                    stockReduction(item);
+                    // Assengno l'ordine di riferimento ad ogni item
+                    item.setOrder(order);
+                    orderItemsRepository.save(item);
+                    return  item;
+                        })
+                .collect(Collectors.toList());
+
+        // Calcolo il totale dell'ordine
+        BigDecimal total = items.stream().map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Assegno lista items ordinati e totale, salvo ordine
+        order.setId(items.get(1).getOrder().getId());
+        order.setOrderItems(items);
+        order.setTotal(total);
+        orderRepository.save(order);
+    }
+
+    //! DELETE
+
+}
