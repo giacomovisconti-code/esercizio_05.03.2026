@@ -14,4 +14,7 @@ public interface InventoryClient {
 
     @PatchMapping("/inventory/deduction/{productId}")
     public ResponseEntity<String> deductionStock(@PathVariable("productId") UUID productId, @RequestParam("quantity") Long quantity);
+
+    @PatchMapping("/inventory/addition/{sku}")
+    public ResponseEntity<String> additionStock(@PathVariable("sku") UUID sku, @RequestParam("quantity") Long quantity);
 }

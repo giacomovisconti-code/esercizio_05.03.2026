@@ -63,6 +63,11 @@ public class OrderService {
         inventoryClient.deductionStock(itemToOrder.getSku(), itemToOrder.getQuantity());
     }
 
+    @CircuitBreaker(name = "validation")
+    private void stockAddition(OrderItems itemToReject){
+        inventoryClient.additionStock(itemToReject.getSku(), itemToReject.getQuantity());
+    }
+
     // Verifico l'esistenza e la disponibilità del prodotto
     private List<OrderItemDraft> orderValidation(List<ItemToOrder> itemToOrder) throws Exception {
 
@@ -70,11 +75,9 @@ public class OrderService {
 
         // Per ogni elemento della lista
         for (int i = 0; i < itemToOrder.size(); i++) {
-            System.out.println(itemToOrder.get(i));
 
             // OpendFeign + CircuitBreaker - verifico l'esistenza del prodotto
             ProductDto p = productValidation(itemToOrder.get(i));
-            System.out.println(p);
 
             // OpenFeign + CircuitBreaker - verifico la disponibilità in stock
             stockValidation(itemToOrder.get(i));
@@ -100,12 +103,12 @@ public class OrderService {
 
     //! GET ALL ORDERS
     public List<Order> getAllOrders(){
-        return orderRepository.findAll();
+        return orderRepository.findAllByDeletedFalse();
     }
 
     //! GET SINGLE ORDER
     public Order getSingleOrderById(UUID orderId){
-        Order o = orderRepository.findOrderById(orderId).orElseThrow(()->new RuntimeException("Nessun ordine trovato"));
+        Order o = orderRepository.findByIdAndDeletedFalse(orderId).orElseThrow(()->new RuntimeException("Nessun ordine trovato"));
         return o;
     }
 
@@ -144,6 +147,74 @@ public class OrderService {
         // Assegno lista items ordinati e totale, salvo ordine
         order.setOrderItems(items);
         order.setTotal(total);
+        orderRepository.save(order);
+    }
+
+    //! UPDATE
+    public void updateOrder(UUID orderId, List<ItemToOrder> itemList) throws Exception {
+        // Trovo l'ordine
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+        if (order.getOrderStatus() != OrderStatus.STATUS_BOZZA) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ordine è già in fase avanzata");
+
+        // Ricarico la disponibilità per la lista prodotti precedente
+        order.getOrderItems().forEach(this::stockAddition);
+
+
+        // Valido i prodotti inseriti
+        List<OrderItemDraft> orderDraft = orderValidation(itemList);
+
+        // Mappo la lista degli items prodotto, in bozza, nella lista da salvare nell'ordine
+        List<OrderItems> items = orderDraft.stream()
+                .map( itemDraft -> {
+                    OrderItems item = convertOrderDraftToOrderItems(itemDraft);
+                    stockReduction(item);
+                    item.setOrder(order);
+                    // Assengno l'ordine di riferimento ad ogni item
+                    return  item;
+                })
+                .collect(Collectors.toList());
+
+        // Calcolo il totale dell'ordine
+        BigDecimal total = items.stream().map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Assegno lista items ordinati e totale, salvo ordine
+        order.getOrderItems().clear();
+        order.getOrderItems().addAll(items);
+        order.setTotal(total);
+        orderRepository.save(order);
+    }
+
+    //! CHANGE ORDER STATUS
+    public void changeOrderStatus(UUID orderId, String status){
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+
+        if(order.getOrderStatus().equals(OrderStatus.STATUS_BOZZA) && status.equals("STATUS_CONFERMATO")){
+            order.setOrderStatus(OrderStatus.STATUS_CONFERMATO);
+        } else if (order.getOrderStatus().equals(OrderStatus.STATUS_CONFERMATO) && status.equals("STATUS_IN_LAVORAZIONE")){
+            order.setOrderStatus(OrderStatus.STATUS_IN_LAVORAZIONE);
+        } else if(order.getOrderStatus().equals(OrderStatus.STATUS_IN_LAVORAZIONE) && status.equals("STATUS_EMESSO")){
+            order.setOrderStatus(OrderStatus.STATUS_EMESSO);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Stato ordine non compatibile con la modifica richiesta!");
+        }
+        orderRepository.save(order);
+    }
+
+    //!DeActive
+    // Disattivazione ordine
+    public void deactiveOrder(UUID orderId) throws Exception {
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+        order.setActive(false);
+        orderRepository.save(order);
+    }
+
+    //! DELETE
+    // Soft delete
+    public void deleteOrder(UUID orderId) throws Exception {
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+        order.setDeleted(true);
+        order.setActive(false);
         orderRepository.save(order);
     }
 

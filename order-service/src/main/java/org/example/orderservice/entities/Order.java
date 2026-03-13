@@ -44,4 +44,10 @@ public class Order {
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     List<OrderItems> orderItems;
+
+    @NotNull
+    private Boolean active = true;
+
+    @NotNull
+    private Boolean deleted = false;
 }
