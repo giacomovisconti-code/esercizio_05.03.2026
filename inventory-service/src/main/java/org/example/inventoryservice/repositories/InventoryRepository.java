@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
-    Optional<Inventory> findByProductId(UUID productId);
+    Optional<Inventory> findBySku(UUID sku);
 
-    void deleteByProductId(UUID productId);
+    void deleteBySku(UUID sku);
 }

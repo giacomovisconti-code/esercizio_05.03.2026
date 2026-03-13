@@ -55,14 +55,12 @@ public class OrderService {
     @CircuitBreaker(name = "validation")
     private void stockValidation(ItemToOrder itemToOrder) throws Exception {
         StockRequest stock = inventoryClient.getStock(itemToOrder.getSku()).getBody();
-        if (stock.getQuantity() < itemToOrder.getQuantity()) throw new Exception("Quantià prodotto richiesta inferiore alla giacenza");
-        inventoryClient.deductionStock(itemToOrder.getSku(), itemToOrder.getQuantity());
-
+        if (stock.getQuantity() < itemToOrder.getQuantity()) throw new Exception("Quantità prodotto richiesta inferiore alla giacenza");
     }
 
     @CircuitBreaker(name = "validation")
     private void stockReduction(OrderItems itemToOrder){
-        inventoryClient.deductionStock(itemToOrder.getProductId(), itemToOrder.getQuantity());
+        inventoryClient.deductionStock(itemToOrder.getSku(), itemToOrder.getQuantity());
     }
 
     // Verifico l'esistenza e la disponibilità del prodotto
@@ -72,9 +70,11 @@ public class OrderService {
 
         // Per ogni elemento della lista
         for (int i = 0; i < itemToOrder.size(); i++) {
+            System.out.println(itemToOrder.get(i));
 
             // OpendFeign + CircuitBreaker - verifico l'esistenza del prodotto
             ProductDto p = productValidation(itemToOrder.get(i));
+            System.out.println(p);
 
             // OpenFeign + CircuitBreaker - verifico la disponibilità in stock
             stockValidation(itemToOrder.get(i));
@@ -82,7 +82,7 @@ public class OrderService {
             // Se esistente e presente in magazzino popolo una lista ordine di bozza che ritorno (OrderItemsDraft)
             OrderItemDraft orderItemDraft = new OrderItemDraft();
             orderItemDraft.setQuantity(itemToOrder.get(i).getQuantity());
-            orderItemDraft.setProductId(p.getId());
+            orderItemDraft.setSku(p.getSku());
             orderItemDraft.setPrice(p.getPrice());
             orderDraftLs.add(orderItemDraft);
         }
@@ -94,7 +94,7 @@ public class OrderService {
         OrderItems orderItems = new OrderItems();
         orderItems.setUnitPrice(itemDraft.getPrice());
         orderItems.setQuantity(itemDraft.getQuantity());
-        orderItems.setProductId(itemDraft.getProductId());
+        orderItems.setSku(itemDraft.getSku());
         return orderItems;
     }
 
@@ -113,6 +113,9 @@ public class OrderService {
     @Transactional
     public void createOrder(List<ItemToOrder> itemList, UUID userId) throws Exception {
 
+        // Controllo che userID non sia null
+        if (userId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "UserId is null");
+
         // Valido i prodotti inseriti
         List<OrderItemDraft> orderDraft = orderValidation(itemList);
 
@@ -120,21 +123,16 @@ public class OrderService {
         Order order = new Order();
         order.setOrderStatus(OrderStatus.STATUS_BOZZA);
 
-        // Controllo ceh userID non sia null
-        if (userId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "UserId is null");
-
-        // Assegno all'ordine l'utente
+        // Assegno l'utente all'ordine
         order.setUserId(userId);
-        order.setId(UUID.randomUUID());
 
-        // Mappo la lista degli items prodotto in bozza nella lista da salvare nell'ordine
+        // Mappo la lista degli items prodotto, in bozza, nella lista da salvare nell'ordine
         List<OrderItems> items = orderDraft.stream()
                 .map( itemDraft -> {
                     OrderItems item = convertOrderDraftToOrderItems(itemDraft);
                     stockReduction(item);
                     // Assengno l'ordine di riferimento ad ogni item
                     item.setOrder(order);
-                    orderItemsRepository.save(item);
                     return  item;
                         })
                 .collect(Collectors.toList());
@@ -144,12 +142,10 @@ public class OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Assegno lista items ordinati e totale, salvo ordine
-        order.setId(items.get(1).getOrder().getId());
         order.setOrderItems(items);
         order.setTotal(total);
         orderRepository.save(order);
     }
 
-    //! DELETE
 
 }

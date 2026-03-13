@@ -23,8 +23,8 @@ public class Inventory {
     private Long id;
 
     // Codice prodotto
-    @Column(name = "product_id", nullable = false, unique = true)
-    private UUID productId;
+    @Column(name = "sku", nullable = false, unique = true)
+    private UUID sku;
 
     @Min(value = 0, message = "La quantità deve essere  positiva.")
     private Long quantity;

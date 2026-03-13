@@ -66,7 +66,7 @@ public class InventoryTest {
         registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.MySQLDialect");
     }
 
-    private static UUID productId = UUID.randomUUID();
+    private static UUID sku = UUID.randomUUID();
 
 
 
@@ -83,9 +83,9 @@ public class InventoryTest {
 
         Inventory stock = new Inventory();
         stock.setQuantity(0L);
-        stock.setProductId(productId);
+        stock.setSku(sku);
         inventoryRepository.save(stock);
-        assertTrue(inventoryRepository.findByProductId(productId).isPresent());
+        assertTrue(inventoryRepository.findBySku(sku).isPresent());
     }
 
     @Test
@@ -106,7 +106,7 @@ public class InventoryTest {
     @Test
     @Order(4)
     void getSingleStockShouldReturnOk() throws Exception {
-        MvcResult result = mockMvc.perform(get("/inventory/{productId}", productId))
+        MvcResult result = mockMvc.perform(get("/inventory/{productId}", sku))
                 .andExpect(status().isOk())
                 .andReturn();
         String res = result.getResponse().getContentAsString();
@@ -114,7 +114,7 @@ public class InventoryTest {
         StockRequest stock = objectMapper.readValue(res, new TypeReference<>(){});
         System.out.println(stock);
 
-        assertEquals(productId, stock.getProductId());
+        assertEquals(sku, stock.getProductId());
 
     }
 
@@ -126,7 +126,7 @@ public class InventoryTest {
                 "productId":"%s",
                 "quantity": 5
                 }
-                """.formatted(productId);
+                """.formatted(sku);
 
         MvcResult result = mockMvc.perform(
                 patch("/inventory/update")
@@ -138,7 +138,7 @@ public class InventoryTest {
 
         System.out.println(res);
 
-        Inventory inv = inventoryRepository.findByProductId(productId).orElseThrow(()-> new Exception("Stock non trovato"));
+        Inventory inv = inventoryRepository.findBySku(sku).orElseThrow(()-> new Exception("Stock non trovato"));
 
         assertTrue(inv.getQuantity() == 5L);
     }
@@ -148,13 +148,13 @@ public class InventoryTest {
     void deductStockQuantityShouldChange() throws Exception {
         // test dell'endpoint gestito da OpenFeign
         MvcResult result = mockMvc.perform(
-                patch("/inventory/deduction/{productId}", productId)
+                patch("/inventory/deduction/{productId}", sku)
                         .queryParam("quantity", "3"))
                 .andExpect(status().isOk())
                 .andReturn();
         String res = result.getResponse().getContentAsString();
 
-        Inventory stock = inventoryRepository.findByProductId(productId).orElseThrow(() -> new Exception("Stock non trovato"));
+        Inventory stock = inventoryRepository.findBySku(sku).orElseThrow(() -> new Exception("Stock non trovato"));
 
         System.out.println(res);
         System.out.println(stock);
@@ -167,13 +167,13 @@ public class InventoryTest {
     void addStockQuantityShouldChange() throws Exception {
         // test dell'endpoint gestito da OpenFeign
         MvcResult result = mockMvc.perform(
-                        patch("/inventory/addition/{productId}", productId)
+                        patch("/inventory/addition/{productId}", sku)
                                 .queryParam("quantity", "3"))
                 .andExpect(status().isOk())
                 .andReturn();
         String res = result.getResponse().getContentAsString();
 
-        Inventory stock = inventoryRepository.findByProductId(productId).orElseThrow(() -> new Exception("Stock non trovato"));
+        Inventory stock = inventoryRepository.findBySku(sku).orElseThrow(() -> new Exception("Stock non trovato"));
 
         System.out.println(res);
         System.out.println(stock);
@@ -185,12 +185,12 @@ public class InventoryTest {
     @Order(8)
     void deleteStockShouldReturnOk() throws Exception{
         MvcResult result = mockMvc.perform(
-                delete("/inventory/delete/{productId}", productId))
+                delete("/inventory/delete/{productId}", sku))
                 .andExpect(status().isOk())
                 .andReturn();
         String res = result.getResponse().getContentAsString();
 
-        Optional<Inventory> stockOpt = inventoryRepository.findByProductId(productId);
+        Optional<Inventory> stockOpt = inventoryRepository.findBySku(sku);
 
         assertTrue(stockOpt.isEmpty());
     }

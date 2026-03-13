@@ -29,7 +29,7 @@ public class InventoryService {
     private void StockChangeValidation(StockChange stock) throws  Exception {
 
         // Verifico se il productId è presente in Inventory
-        if (inventoryRepository.findByProductId(stock.getProductId()).isEmpty()) {
+        if (inventoryRepository.findBySku(stock.getSku()).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Non esiste un prodotto con qusto ProductID");
         }
 
@@ -54,10 +54,10 @@ public class InventoryService {
     }
 
     //? SINGOLA GIACENZA
-    public StockRequest getStockByProductId(UUID productId){
+    public StockRequest getStockByProductId(UUID sku){
 
         // Cerco tramite il product id la giacenza relativa
-        Optional<Inventory> stockOpt = inventoryRepository.findByProductId(productId);
+        Optional<Inventory> stockOpt = inventoryRepository.findBySku(sku);
 
         // Verifico se esiste
         if (stockOpt.isEmpty()){
@@ -72,17 +72,17 @@ public class InventoryService {
 
     //? CREAZIONE GIACENZA
     // Creazione automatica nel momento dell'aggiunta del prodotto
-    public void initializeStock(UUID productId) throws Exception {
+    public void initializeStock(UUID sku) throws Exception {
 
         // Controllo se il prodotto è già presente in inventario
-        if (inventoryRepository.findByProductId(productId).isPresent()){
+        if (inventoryRepository.findBySku(sku).isPresent()){
             // Se presente lancio una eccezione di conflitto
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Prodotto già inventariato");
         }
 
         // Se non è presente lo inizializzo a zero, con productId inserito
         Inventory initialized = new Inventory();
-        initialized.setProductId(productId);
+        initialized.setSku(sku);
         initialized.setQuantity(0L);
         inventoryRepository.save(initialized);
 
@@ -95,7 +95,7 @@ public class InventoryService {
         // Valido il Dto in entrata
         StockChangeValidation(stockChange);
 
-        Inventory stock = inventoryRepository.findByProductId(stockChange.getProductId()).get();
+        Inventory stock = inventoryRepository.findBySku(stockChange.getSku()).get();
 
         // Modifico la quantità
         stock.setQuantity(stockChange.getQuantity());
@@ -106,8 +106,8 @@ public class InventoryService {
 
     // Aggiunta (il numero inserito si somma alla giacenza corrente)
     @Transactional
-    public void addStock(UUID productId, Long quantity){
-        Optional<Inventory> invOpt = inventoryRepository.findByProductId(productId);
+    public void addStock(UUID sku, Long quantity){
+        Optional<Inventory> invOpt = inventoryRepository.findBySku(sku);
 
         // Verifico se è presente la giacenza per un prodotto con quel productId
         if (invOpt.isEmpty()){
@@ -127,8 +127,8 @@ public class InventoryService {
 
     // Deduzione (il numero inserito si sottrae alla giacenza corrente)
     @Transactional
-    public void deductStock(UUID productId, Long quantity){
-        Optional<Inventory> invOpt = inventoryRepository.findByProductId(productId);
+    public void deductStock(UUID sku, Long quantity){
+        Optional<Inventory> invOpt = inventoryRepository.findBySku(sku);
 
         // Verifico se è presente la giacenza per un prodotto con quel productId
         if (invOpt.isEmpty()){
@@ -149,14 +149,14 @@ public class InventoryService {
     //? ELIMINAZIONE GIACENZA
     // Eliminazione automatica con l'eliminazione del prootto
     @Transactional
-    public void deleteStock(UUID productId){
+    public void deleteStock(UUID sku){
 
         // Verifico l'esistenza del prodotto con il productId in entrata
-        if (inventoryRepository.findByProductId(productId).isEmpty()){
+        if (inventoryRepository.findBySku(sku).isEmpty()){
             throw  new ResponseStatusException(HttpStatus.NOT_FOUND, "Prodotto non trovato");
         }
 
         // Se esistente elimino la giacenza
-        inventoryRepository.deleteByProductId(productId);
+        inventoryRepository.deleteBySku(sku);
     }
 }

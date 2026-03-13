@@ -11,6 +11,6 @@ import java.util.UUID;
 @NoArgsConstructor
 public class StockChange {
 
-    private UUID productId;
+    private UUID sku;
     private Long quantity;
 }
