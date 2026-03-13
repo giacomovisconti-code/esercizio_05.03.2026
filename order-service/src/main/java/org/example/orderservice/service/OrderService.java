@@ -9,6 +9,7 @@ import org.example.orderservice.dto.StockRequest;
 import org.example.orderservice.entities.Order;
 import org.example.orderservice.entities.OrderItems;
 import org.example.orderservice.enums.OrderStatus;
+import org.example.orderservice.kafka.KafkaProducer;
 import org.example.orderservice.openfeign.InventoryClient;
 import org.example.orderservice.openfeign.ProductClient;
 import org.example.orderservice.repositories.OrderItemsRepository;
@@ -31,6 +32,9 @@ public class OrderService {
     private final ModelMapper modelMapper = new ModelMapper();
 
     @Autowired
+    private KafkaProducer kafkaProducer;
+
+    @Autowired
     private OrderRepository orderRepository;
 
     @Autowired
@@ -41,6 +45,12 @@ public class OrderService {
 
     @Autowired
     private ProductClient productClient;
+
+    private static final String MESSAGE = """
+    Email di conferma per utente:  %s,
+    
+    Il tuo ordine con ID %s, è stato creato con successo!
+""";
 
     //? UTILS
     // Circuit Breaker per product validation
@@ -148,6 +158,8 @@ public class OrderService {
         order.setOrderItems(items);
         order.setTotal(total);
         orderRepository.save(order);
+        kafkaProducer.sendMessage(MESSAGE.formatted(order.getUserId(), order.getId()));
+
     }
 
     //! UPDATE
