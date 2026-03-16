@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.Map;
 
 @Component
 public class JwtUtils {
@@ -22,11 +23,14 @@ public class JwtUtils {
         this.expiration = expiration;
     }
 
-    public String generateToken(String username){
 
+    public String generateToken(String username, String role){
+
+        Map<String, String> claims = Map.of("username",username, "role", role);
         // Genero il token
         return Jwts.builder()
-                .setSubject(username)
+                .setClaims(claims)
+                .setSubject(claims.get("username"))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(key)

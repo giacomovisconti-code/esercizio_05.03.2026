@@ -1,4 +1,4 @@
-package org.example.userservice.service;
+package org.example.userservice.controllers;
 
 import org.example.userservice.dto.LoginRequest;
 import org.example.userservice.dto.LoginResponse;
@@ -44,7 +44,7 @@ public class AuthController {
         }
 
         // Se coincidono genero il token
-        String token = jwtUtils.generateToken(user.getUsername());
+        String token = jwtUtils.generateToken(user.getUsername(), user.getRole().toString());
 
         return ResponseEntity.ok( new LoginResponse(user.getUsername(), user.getRole(), token));
     }
