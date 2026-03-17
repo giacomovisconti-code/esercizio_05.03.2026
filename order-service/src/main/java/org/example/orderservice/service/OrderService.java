@@ -135,6 +135,8 @@ public class OrderService {
         // Creo ordine
         Order order = new Order();
         order.setOrderStatus(OrderStatus.STATUS_BOZZA);
+        order.setActive(true);
+        System.out.println("DEBUG: Stato ordine prima del save: " + order.getActive());
 
         // Assegno l'utente all'ordine
         order.setUserId(userId);
@@ -158,6 +160,7 @@ public class OrderService {
         order.setOrderItems(items);
         order.setTotal(total);
         orderRepository.save(order);
+        System.out.println("DEBUG: Stato ordine prima del save: " + order.getActive());
         kafkaProducer.sendMessage(MESSAGE.formatted(order.getUserId(), order.getId()));
 
     }

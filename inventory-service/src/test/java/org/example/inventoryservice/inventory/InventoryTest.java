@@ -114,7 +114,7 @@ public class InventoryTest {
         StockRequest stock = objectMapper.readValue(res, new TypeReference<>(){});
         System.out.println(stock);
 
-        assertEquals(sku, stock.getProductId());
+        assertEquals(sku, stock.getSku());
 
     }
 

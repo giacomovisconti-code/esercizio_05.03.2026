@@ -24,13 +24,13 @@ public class JwtUtils {
     }
 
 
-    public String generateToken(String username, String role){
+    public String generateToken(String userId, String role){
 
-        Map<String, String> claims = Map.of("username",username, "role", role);
+        Map<String, String> claims = Map.of("userId",userId, "role", role);
         // Genero il token
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(claims.get("username"))
+                .setSubject(claims.get("userId"))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(key)

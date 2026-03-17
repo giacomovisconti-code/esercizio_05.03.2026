@@ -44,7 +44,7 @@ public class AuthController {
         }
 
         // Se coincidono genero il token
-        String token = jwtUtils.generateToken(user.getUsername(), user.getRole().toString());
+        String token = jwtUtils.generateToken(user.getId().toString(), user.getRole().toString());
 
         return ResponseEntity.ok( new LoginResponse(user.getUsername(), user.getRole(), token));
     }

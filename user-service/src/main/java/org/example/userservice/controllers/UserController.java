@@ -40,24 +40,24 @@ public class UserController {
 
     }
 
-    @PostMapping("/create-user")
-    public ResponseEntity<String> createUser(){
-        User user = new User();
-        user.setRole(Role.ROLE_USER);
-        user.setUsername("userTest");
-        user.setPassword(passwordEncoder.encode("user1234"));
-        userRepository.save(user);
-        return ResponseEntity.ok("Utente creato con successo");
-    }
-
-    @PostMapping("/create-admin")
-    public ResponseEntity<String> createAdmin(){
-        User user = new User();
-        user.setRole(Role.ROLE_USER);
-        user.setUsername("userTest");
-        user.setPassword(passwordEncoder.encode("user1234"));
-        userRepository.save(user);
-        return ResponseEntity.ok("Utente creato con successo");
-    }
+//    @PostMapping("/create-user")
+//    public ResponseEntity<String> createUser(){
+//        User user = new User();
+//        user.setRole(Role.ROLE_USER);
+//        user.setUsername("userTest");
+//        user.setPassword(passwordEncoder.encode("user1234"));
+//        userRepository.save(user);
+//        return ResponseEntity.ok("Utente creato con successo");
+//    }
+//
+//    @PostMapping("/create-admin")
+//    public ResponseEntity<String> createAdmin(){
+//        User user = new User();
+//        user.setRole(Role.ROLE_USER);
+//        user.setUsername("userTest");
+//        user.setPassword(passwordEncoder.encode("user1234"));
+//        userRepository.save(user);
+//        return ResponseEntity.ok("Utente creato con successo");
+//    }
 
 }

@@ -46,7 +46,7 @@ public class Order {
     List<OrderItems> orderItems;
 
     @NotNull
-    private Boolean active = true;
+    private Boolean active;
 
     @NotNull
     private Boolean deleted = false;
