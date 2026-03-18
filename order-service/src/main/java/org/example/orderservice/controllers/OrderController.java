@@ -59,6 +59,12 @@ public class OrderController {
         orderService.deactiveOrder(orderId);
         return ResponseEntity.ok("Ordine Disattivato con successo!");
     }
+    //? REACTIVE ORDER
+    @PatchMapping("/reactivate/{orderId}")
+    public ResponseEntity<String> reactivateOrder(@PathVariable("orderId") UUID orderId) throws Exception {
+        orderService.reactivateOrder(orderId);
+        return ResponseEntity.ok("Ordine Riattivato con successo!");
+    }
 
     //? SOFT DELETE ORDER
     @PatchMapping("/delete/{orderId}")

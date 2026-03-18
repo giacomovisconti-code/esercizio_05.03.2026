@@ -169,6 +169,13 @@ public class OrderService {
     public void updateOrder(UUID orderId, List<ItemToOrder> itemList) throws Exception {
         // Trovo l'ordine
         Order order = orderRepository.findOrderById(orderId).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+
+
+        // Controllo se l'ordine è disattivato o eliminato
+        if (order.getDeleted()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine eliminato, creane uno nuovo!");
+        if (!order.getActive()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine disattivato, riattivalo per applicare le modifiche!");
+
+        // Controllo se lo stato dell'ordine è compatibie con la modifica
         if (order.getOrderStatus() != OrderStatus.STATUS_BOZZA) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ordine è già in fase avanzata");
 
         // Ricarico la disponibilità per la lista prodotti precedente
@@ -204,6 +211,10 @@ public class OrderService {
     public void changeOrderStatus(UUID orderId, String status){
         Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
 
+        // Controllo se l'ordine è disattivato o eliminato
+        if (order.getDeleted()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine eliminato, creane uno nuovo!");
+        if (!order.getActive()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine disattivato, riattivalo per applicare le modifiche!");
+
         if(order.getOrderStatus().equals(OrderStatus.STATUS_BOZZA) && status.equals("STATUS_CONFERMATO")){
             order.setOrderStatus(OrderStatus.STATUS_CONFERMATO);
         } else if (order.getOrderStatus().equals(OrderStatus.STATUS_CONFERMATO) && status.equals("STATUS_IN_LAVORAZIONE")){
@@ -221,6 +232,14 @@ public class OrderService {
     public void deactiveOrder(UUID orderId) throws Exception {
         Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
         order.setActive(false);
+        orderRepository.save(order);
+    }
+
+    //! ReActive
+    // Riattivazione ordine
+    public void reactivateOrder(UUID orderId) throws Exception {
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+        order.setActive(true);
         orderRepository.save(order);
     }
 
