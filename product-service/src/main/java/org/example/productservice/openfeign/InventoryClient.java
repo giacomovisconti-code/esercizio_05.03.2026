@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.UUID;
 
-@FeignClient(name = "inventory-service", url = "localhost:8081")
+@FeignClient(name = "inventory-service")
 public interface InventoryClient {
 
     @PostMapping("/inventory/create/{productId}")
