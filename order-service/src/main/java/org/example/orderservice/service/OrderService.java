@@ -238,7 +238,10 @@ public class OrderService {
     //! ReActive
     // Riattivazione ordine
     public void reactivateOrder(UUID orderId) throws Exception {
+
         Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+        if (order.getDeleted()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine eliminato, non è possibile riattivarlo!");
+        if (order.getActive()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine già attivo!");
         order.setActive(true);
         orderRepository.save(order);
     }
