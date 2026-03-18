@@ -32,8 +32,8 @@ public class OrderController {
     }
 
     //? CREATE
-    @PostMapping("/create/{userId}")
-    public ResponseEntity<String> createOrder(@RequestBody List<ItemToOrder> itemList, @PathVariable("userId") UUID userId) throws Exception {
+    @PostMapping("/create")
+    public ResponseEntity<String> createOrder(@RequestBody List<ItemToOrder> itemList, @RequestHeader("X-User-Id") UUID userId) throws Exception {
         orderService.createOrder(itemList, userId);
         return ResponseEntity.ok("Ordine creato con successo!");
     }

@@ -41,10 +41,21 @@ public class AuthenticationFilter implements GatewayFilter {
 
             try {
                 Claims claims = jwtUtils.getClaims(token);
+                String userId = claims.getSubject();
                 String role = claims.get("role", String.class);
+
+                ServerHttpRequest mutatedReq = exchange.getRequest()
+                        .mutate()
+                        .headers( h -> {
+                                    h.remove("X-User-Id");
+                                    h.add("X-User-Id", userId);
+                        })
+                        .build();
 
                 String path = request.getURI().getPath();
                 HttpMethod method = request.getMethod();
+
+                exchange = exchange.mutate().build();
 
                 // USERS
                 Mono<Void> userMono = usersFilters(role, path, method, exchange);
