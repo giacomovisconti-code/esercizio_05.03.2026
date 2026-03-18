@@ -27,6 +27,7 @@ public class AuthenticationFilter implements GatewayFilter {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
         ServerHttpRequest request = exchange.getRequest();
+
         // Verifico se la rotta è tra le rotte protette
         if (validator.isSecured.test(request)){
 
