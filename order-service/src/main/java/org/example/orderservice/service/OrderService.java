@@ -250,6 +250,9 @@ public class OrderService {
     // Soft delete
     public void deleteOrder(UUID orderId) throws Exception {
         Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+
+        // Ricarico la disponibilità per la lista prodotti precedente
+        order.getOrderItems().forEach(this::stockAddition);
         order.setDeleted(true);
         order.setActive(false);
         orderRepository.save(order);
