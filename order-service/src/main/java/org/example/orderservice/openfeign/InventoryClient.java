@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@FeignClient(name = "inventory-service", configuration = FeignClientConfiguration.class)
+@FeignClient(name = "inventory-service",url = "http://inventory-service:8081", configuration = FeignClientConfiguration.class)
 public interface InventoryClient {
     @GetMapping("/inventory/{productId}")
     public ResponseEntity<StockRequest> getStock(@PathVariable("productId") UUID productId);
