@@ -108,7 +108,8 @@ public class AuthenticationFilter implements GatewayFilter {
 
         if ((path.contains("/orders/changestatuts") ||
                 path.contains("/orders/deactivate") ||
-                path.contains("/orders/delete")) &&
+                path.contains("/orders/delete") ||
+                path.contains("/orders/reactivate")) &&
                 method == HttpMethod.PATCH) {
 
             if (!role.equals("ROLE_ADMIN")) {
