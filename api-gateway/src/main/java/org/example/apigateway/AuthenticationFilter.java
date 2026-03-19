@@ -4,12 +4,16 @@ import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -21,6 +25,9 @@ public class AuthenticationFilter implements GatewayFilter {
 
     @Autowired
     private RouteValidator validator;
+
+    AntPathMatcher pathMatcher = new AntPathMatcher();
+
 
 
     @Override
@@ -37,6 +44,7 @@ public class AuthenticationFilter implements GatewayFilter {
             }
 
             String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
+            if (!authHeader.startsWith("Bearer ") || authHeader.isBlank()) return onError(exchange, "Token non valido");
             String token = authHeader.substring(7);
 
             try {
@@ -49,29 +57,31 @@ public class AuthenticationFilter implements GatewayFilter {
                         .headers( h -> {
                                     h.remove("X-User-Id");
                                     h.add("X-User-Id", userId);
+                                    h.remove("role");
+                                    h.add("role", role);
                         })
                         .build();
 
-                String path = request.getURI().getPath();
+                String path = request.getPath().pathWithinApplication().value();
                 HttpMethod method = request.getMethod();
 
-                exchange = exchange.mutate().build();
+                exchange = exchange.mutate().request(mutatedReq).build();
 
                 // USERS
                 Mono<Void> userMono = usersFilters(role, path, method, exchange);
-                if (userMono != null && !userMono.equals(Mono.empty())) return userMono;
+                if (!userMono.equals(Mono.empty()) ) return userMono;
 
                 // PRODUCTS
                 Mono<Void> productMono =  productsFilters(role, path, method, exchange);
-                if (productMono != null && !productMono.equals(Mono.empty())) return productMono;
+                if (!productMono.equals(Mono.empty()) ) return productMono;
 
                 // ORDERS
                 Mono<Void> orderMono = ordersFilters(role, path, method, exchange);
-                if (orderMono != null && !orderMono.equals(Mono.empty())) return orderMono;
+                if (!orderMono.equals(Mono.empty()) ) return orderMono;
 
                 // INVENTORY
                 Mono<Void> inventoryMono = inventoryFilters(role, path, method, exchange);
-                if (inventoryMono != null && !inventoryMono.equals(Mono.empty())) return inventoryMono;
+                if (!inventoryMono.equals(Mono.empty()) ) return inventoryMono;
 
             } catch (Exception e) {
 
@@ -85,42 +95,64 @@ public class AuthenticationFilter implements GatewayFilter {
 
     private Mono<Void> onError(ServerWebExchange exchange, String err) {
         exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-        return exchange.getResponse().setComplete();
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        String body = """
+            {
+              "status": %d,
+              "error": "%s"
+            }
+            """.formatted(HttpStatus.FORBIDDEN.value(), err);
+
+        DataBuffer buffer = exchange.getResponse()
+                .bufferFactory()
+                .wrap(body.getBytes());
+        return exchange.getResponse().writeWith(Mono.just(buffer));
     }
 
     private Mono<Void> usersFilters(String role, String path, HttpMethod method, ServerWebExchange exchange) {
-        if (path.contains("/users/all") && method == HttpMethod.GET) {
+
+        if (pathMatcher.match("/users/all", path) && method == HttpMethod.GET) {
             if (!role.equals("ROLE_ADMIN")) {
                return onError(exchange, "Forbidden");
             }
         }
-        return Mono.empty();
-
+       return Mono.empty() ;
     }
 
     private Mono<Void> productsFilters(String role, String path, HttpMethod method, ServerWebExchange exchange) {
-        if (path.contains("/products") &&
-                (method == HttpMethod.POST || method == HttpMethod.PATCH || method == HttpMethod.DELETE)) {
+        if (pathMatcher.match("/products/create", path) &&
+                method == HttpMethod.POST) {
             if (!role.equals("ROLE_ADMIN")) {
                 return onError(exchange, "Forbidden");
             }
         }
+
+        if (pathMatcher.match("/products/update", path) &&
+                method == HttpMethod.PATCH) {
+            if (!role.equals("ROLE_ADMIN")) {
+                return onError(exchange, "Forbidden");
+            }
+        }
+
+        if (pathMatcher.match("/products/delete/*", path) &&
+                method == HttpMethod.DELETE) {
+            if (!role.equals("ROLE_ADMIN")) {
+                return onError(exchange, "Forbidden");
+            }
+        }
+
+
         return Mono.empty();
 
     }
 
     private Mono<Void> ordersFilters(String role, String path, HttpMethod method, ServerWebExchange exchange) {
-        if (path.contains("/orders") && method == HttpMethod.GET) {
-            if (!role.equals("ROLE_ADMIN")) {
-                return onError(exchange, "Forbidden");
 
-            }
-        }
-
-        if ((path.contains("/orders/changestatuts") ||
-                path.contains("/orders/deactivate") ||
-                path.contains("/orders/delete") ||
-                path.contains("/orders/reactivate")) &&
+        if ((pathMatcher.match("/orders/changestatus/*", path) ||
+                pathMatcher.match("/orders/deactivate/*", path) ||
+                pathMatcher.match("/orders/delete/*", path) ||
+                pathMatcher.match("/orders/reactivate/*", path)) &&
                 method == HttpMethod.PATCH) {
 
             if (!role.equals("ROLE_ADMIN")) {
@@ -129,15 +161,23 @@ public class AuthenticationFilter implements GatewayFilter {
             }
         }
 
-        if (path.contains("/orders/create") && method == HttpMethod.POST){
+        if (pathMatcher.match("/orders/create", path) && method == HttpMethod.POST){
             if (!role.equals("ROLE_USER")) return onError(exchange, "Forbidden");
+        }
+
+        if (method == HttpMethod.GET && pathMatcher.match("/orders", path)) {
+            if (!role.equals("ROLE_ADMIN")) return onError(exchange, "Forbidden");
+        }
+
+        if (method == HttpMethod.GET && pathMatcher.match("/orders/*", path)) {
+            if (!role.equals("ROLE_ADMIN") && !role.equals("ROLE_USER")) return onError(exchange, "Forbidden");
         }
 
         return Mono.empty();
 
     }
     private Mono<Void> inventoryFilters(String role, String path, HttpMethod method, ServerWebExchange exchange) {
-        if (path.contains("/inventory") && !role.equals("ROLE_ADMIN")) {
+        if (pathMatcher.match("/inventory/**", path) && !role.equals("ROLE_ADMIN")) {
             return onError(exchange, "Forbidden");
         }
 

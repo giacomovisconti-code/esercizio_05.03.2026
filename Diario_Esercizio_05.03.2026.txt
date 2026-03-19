@@ -60,7 +60,7 @@ GIORNO 10
 - fix su config-server
 - testing
 - fix su delete order
-- 
+
 
 
 

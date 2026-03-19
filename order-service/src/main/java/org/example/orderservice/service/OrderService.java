@@ -117,9 +117,14 @@ public class OrderService {
     }
 
     //! GET SINGLE ORDER
-    public Order getSingleOrderById(UUID orderId){
+    public Order getSingleOrderById(UUID orderId, UUID userId, String usRole) throws Exception{
         Order o = orderRepository.findByIdAndDeletedFalse(orderId).orElseThrow(()->new RuntimeException("Nessun ordine trovato"));
-        return o;
+
+        if (usRole.equals("ROLE_ADMIN") || (usRole.equals("ROLE_USER") && userId.equals(o.getUserId())) ) {
+
+            return o;
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Non hai i permessi per visualizzare qusta risorsa");
     }
 
     //! CREATE ORDER

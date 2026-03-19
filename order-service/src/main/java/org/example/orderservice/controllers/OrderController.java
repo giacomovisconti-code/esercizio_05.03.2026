@@ -27,8 +27,8 @@ public class OrderController {
 
     //? SHOW
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrderById(@PathVariable("id") UUID id){
-        return ResponseEntity.ok(orderService.getSingleOrderById(id));
+    public ResponseEntity<Order> getOrderById(@PathVariable("id") UUID id, @RequestHeader("X-User-Id") UUID userId, @RequestHeader("role") String role) throws Exception {
+        return ResponseEntity.ok(orderService.getSingleOrderById(id, userId, role));
     }
 
     //? CREATE
