@@ -1,0 +1,68 @@
+GIORNO 1 (05/03/2026)
+- Scuffolding di tutti i microservizi.
+- Scelta delle versioni delle dipendenze e di SpringBoot (!)
+- Struttra dei Db dei vari microservizi
+- Studio di Spring Cloud Config
+- Inizio implementazione di Spring Cloud Config (lato server)
+- Fixing generale sui problemi dovuti alle versioni delle dipendenze.
+
+GIORNO 2
+- Fine implementazione Spring Cloud Config (lato client)
+- Test della lettura delle env dal cloud config server per ogni microservizio.
+- Implementazione Eureka.
+- Routing microservizi sul Gateway
+- Implementazione Actuator
+- Implementazione User-service: entity, dto, enums per ruoli, Repo
+- Inizio Jwt generation 
+
+GIORNO 3 
+- Fine Jwt generation
+- Creazione rotte per users e authentication
+- Test di autenticazione con Postman
+- Implementazione Product service: entity, repo, service, dto 
+ 
+GIORNO 4
+- fix Delete product-service
+- implementazione dello swagger
+- creazione Dockerfile e immagine di product-service
+- Creazione inventory-service, dtos, controller, service, aggiunta OpenFeign per comunicare con product-service
+- test su postman.
+- Integration test, teoria
+
+GIORNO 5
+- gestione secret key con Docker
+- Integretion test per product
+
+GIORNO 6
+- Integretion test per Inventory
+- creazione Order service
+
+GIORNO 7
+- Completamento order service, con CRUD 
+- integrazione Apache Kafka
+- Test produzione evento.
+
+GIORNO 8 
+- Order service container
+- creazione del Notification-service
+- implementazione di Liquibase, creazione db
+- Test end to end
+- Gateway filters
+
+GIORNO 9 
+- Gateway filters
+- Aggiornamento postMan collection
+- test manuali flusso utente
+
+GIORNO 10
+- docker compose file
+- Aggiunta logica di modifica ordine con isActive
+- fix su config-server
+- testing
+- fix su delete order
+- 
+
+
+
+
+
