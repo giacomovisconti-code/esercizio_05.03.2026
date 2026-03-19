@@ -117,6 +117,13 @@ public class AuthenticationFilter implements GatewayFilter {
                return onError(exchange, "Forbidden");
             }
         }
+
+        if(pathMatcher.match("/users/giveAdmin/*", path) && method == HttpMethod.PATCH) {
+            if (!role.equals("ROLE_ADMIN")){
+                return onError(exchange, "Forbidden");
+            }
+        }
+
        return Mono.empty() ;
     }
 

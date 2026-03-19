@@ -22,7 +22,5 @@ public class RegisterRequest {
     @Length(min = 6, message = "Password cannot be shoter than 6 chars")
     private String password;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
 
 }

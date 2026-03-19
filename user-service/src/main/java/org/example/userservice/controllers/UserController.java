@@ -27,8 +27,8 @@ public class UserController {
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @GetMapping("/all")
-    public ResponseEntity<List<User>> getUsers(){
-        return ResponseEntity.ok(userRepository.findAll());
+    public ResponseEntity<List<UserResponse>> getUsers(){
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @PostMapping("/register")
@@ -40,24 +40,11 @@ public class UserController {
 
     }
 
-//    @PostMapping("/create-user")
-//    public ResponseEntity<String> createUser(){
-//        User user = new User();
-//        user.setRole(Role.ROLE_USER);
-//        user.setUsername("userTest");
-//        user.setPassword(passwordEncoder.encode("user1234"));
-//        userRepository.save(user);
-//        return ResponseEntity.ok("Utente creato con successo");
-//    }
-//
-//    @PostMapping("/create-admin")
-//    public ResponseEntity<String> createAdmin(){
-//        User user = new User();
-//        user.setRole(Role.ROLE_USER);
-//        user.setUsername("userTest");
-//        user.setPassword(passwordEncoder.encode("user1234"));
-//        userRepository.save(user);
-//        return ResponseEntity.ok("Utente creato con successo");
-//    }
+    @PatchMapping("/giveAdmin/{userId}")
+    public ResponseEntity<String> giveAdminPermission(@PathVariable("userId") UUID userId){
+        userService.giveAdminPermission(userId);
+        return ResponseEntity.ok("L'utente ha ora i permessi di Admin");
+    }
+
 
 }
