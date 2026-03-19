@@ -1,6 +1,8 @@
 package org.example.userservice.controllers;
 
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.example.userservice.dto.RegisterRequest;
 import org.example.userservice.dto.UserResponse;
 import org.example.userservice.entities.User;
@@ -32,7 +34,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> createUser(@RequestBody RegisterRequest registerRequest) throws Exception {
+    public ResponseEntity<String> createUser(@Valid @RequestBody RegisterRequest registerRequest) throws Exception {
 
         userService.register(registerRequest);
 
@@ -41,7 +43,7 @@ public class UserController {
     }
 
     @PatchMapping("/giveAdmin/{userId}")
-    public ResponseEntity<String> giveAdminPermission(@PathVariable("userId") UUID userId){
+    public ResponseEntity<String> giveAdminPermission(@NotNull @PathVariable("userId") UUID userId){
         userService.giveAdminPermission(userId);
         return ResponseEntity.ok("L'utente ha ora i permessi di Admin");
     }

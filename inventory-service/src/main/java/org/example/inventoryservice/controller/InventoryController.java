@@ -1,12 +1,15 @@
 package org.example.inventoryservice.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.QueryParam;
 import org.example.inventoryservice.dto.StockChange;
 import org.example.inventoryservice.dto.StockRequest;
 import org.example.inventoryservice.servicies.InventoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,14 +30,14 @@ public class InventoryController {
 
     //! SHOW
     @GetMapping("/{productId}")
-    public ResponseEntity<StockRequest> getStock(@PathVariable("productId") UUID productId){
+    public ResponseEntity<StockRequest> getStock(@NotNull @PathVariable("productId") UUID productId){
          return  ResponseEntity.ok(inventoryService.getStockByProductId(productId));
     }
 
     //! CREATE
     // Automatica con OpenFeign
     @PostMapping("/create/{productId}")
-    public ResponseEntity<String> createStock(@PathVariable("productId") UUID productId) throws Exception {
+    public ResponseEntity<String> createStock(@NotNull @PathVariable("productId") UUID productId) throws Exception {
         inventoryService.initializeStock(productId);
         return ResponseEntity.ok("Giacenza inizializzata");
     }
@@ -42,7 +45,8 @@ public class InventoryController {
     //! DEDUCTION
     // deduction stock
     @PatchMapping("/deduction/{productId}")
-    public ResponseEntity<String> deductionStock(@PathVariable("productId") UUID productId, @RequestParam("quantity") Long quantity){
+    @Validated
+    public ResponseEntity<String> deductionStock(@PathVariable("productId") UUID productId,@NotNull @Min(1) @RequestParam("quantity") Long quantity){
         inventoryService.deductStock(productId, quantity);
         return ResponseEntity.ok("Giacenza ridotta con successo");
     }
@@ -50,7 +54,8 @@ public class InventoryController {
     //! ADDTION
     // Addition stock
     @PatchMapping("/addition/{sku}")
-    public ResponseEntity<String> additionStock(@PathVariable("sku") UUID sku, @RequestParam("quantity") Long quantity){
+    @Validated
+    public ResponseEntity<String> additionStock(@PathVariable("sku") UUID sku,@NotNull @Min(1) @RequestParam("quantity") Long quantity){
         inventoryService.addStock(sku, quantity);
         return ResponseEntity.ok("Giacenza incrementata con successo");
     }

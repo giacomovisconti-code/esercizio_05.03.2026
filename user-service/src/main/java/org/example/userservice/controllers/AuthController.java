@@ -1,5 +1,6 @@
 package org.example.userservice.controllers;
 
+import jakarta.validation.Valid;
 import org.example.userservice.dto.LoginRequest;
 import org.example.userservice.dto.LoginResponse;
 import org.example.userservice.entities.User;
@@ -28,7 +29,7 @@ public class AuthController {
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest){
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest){
         Optional<User> uOpt = userRepository.findUserByUsername(loginRequest.getUsername());
 
         // Controllo se esiste l'utente
