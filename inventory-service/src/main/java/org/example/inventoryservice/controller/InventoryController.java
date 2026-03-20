@@ -43,19 +43,19 @@ public class InventoryController {
 
     //! DEDUCTION
     // deduction stock
-    @PatchMapping("/deduction/{productId}")
+    @PutMapping("/deduction")
     @Validated
-    public ResponseEntity<String> deductionStock(@PathVariable("productId") UUID productId,@NotNull @Min(1) @RequestParam("quantity") Long quantity){
-        inventoryService.deductStock(productId, quantity);
+    public ResponseEntity<String> deductionStock(@Valid @RequestBody List<StockChange> list){
+        inventoryService.deductStock(list);
         return ResponseEntity.ok("Giacenza ridotta con successo");
     }
 
     //! ADDITION
     // Addition stock
-    @PatchMapping("/addition/{sku}")
+    @PutMapping("/addition")
     @Validated
-    public ResponseEntity<String> additionStock(@PathVariable("sku") UUID sku,@NotNull @Min(1) @RequestParam("quantity") Long quantity){
-        inventoryService.addStock(sku, quantity);
+    public ResponseEntity<String> additionStock(@Valid @RequestBody List<StockChange> list){
+        inventoryService.addStock(list);
         return ResponseEntity.ok("Giacenza incrementata con successo");
     }
 

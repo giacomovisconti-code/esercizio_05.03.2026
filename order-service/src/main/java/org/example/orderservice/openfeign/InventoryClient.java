@@ -1,20 +1,24 @@
 package org.example.orderservice.openfeign;
 
+import jakarta.validation.Valid;
+import org.example.orderservice.dto.StockChange;
 import org.example.orderservice.dto.StockRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
-@FeignClient(name = "inventory-service",url = "http://inventory-service:8081", configuration = FeignClientConfiguration.class)
+@FeignClient(name = "inventory-service")
 public interface InventoryClient {
     @GetMapping("/inventory/{productId}")
     public ResponseEntity<StockRequest> getStock(@PathVariable("productId") UUID productId);
 
-    @PatchMapping("/inventory/deduction/{productId}")
-    public ResponseEntity<String> deductionStock(@PathVariable("productId") UUID productId, @RequestParam("quantity") Long quantity);
+    @PutMapping("/deduction")
+    public ResponseEntity<String> deductionStock(@Valid @RequestBody List<StockChange> list);
 
-    @PatchMapping("/inventory/addition/{sku}")
-    public ResponseEntity<String> additionStock(@PathVariable("sku") UUID sku, @RequestParam("quantity") Long quantity);
+    @PutMapping("/addition")
+    public ResponseEntity<String> additionStock(@Valid @RequestBody List<StockChange> list);
 }

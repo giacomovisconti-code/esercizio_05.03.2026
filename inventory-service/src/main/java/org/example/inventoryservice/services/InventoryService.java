@@ -106,33 +106,41 @@ public class InventoryService {
 
     // Aggiunta (il numero inserito si somma alla giacenza corrente)
     @Transactional
-    public void addStock(UUID sku, Long quantity){
-        Inventory inv = inventoryRepository.findBySku(sku).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    public void addStock(List<StockChange> items){
+        if (items.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nessun prodotto inserito");
+        items.forEach( i -> {
 
-        if (quantity == null || quantity <= 0){
-            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Inserire una quantità positiva.");
-        }
+            Inventory inv = inventoryRepository.findBySku(i.getSku()).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        inv.setQuantity(inv.getQuantity() + quantity);
-        inventoryRepository.save(inv);
+            // Verifico che la quantità da dedurre non sia minore o uguale a zero o che non sia nulla
+            if (i.getQuantity() == null || i.getQuantity() <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantità da dedurre è inferiore o uguale a zero");
+
+            inv.setQuantity(inv.getQuantity() + i.getQuantity());
+            inventoryRepository.save(inv);
+        });
+
 
     }
 
     // Deduzione (il numero inserito si sottrae alla giacenza corrente)
     @Transactional
-    public void deductStock(UUID sku, Long quantity){
-        Inventory inv = inventoryRepository.findBySku(sku).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    public void deductStock(List<StockChange> items){
+        if (items.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nessun prodotto inserito");
+        items.forEach( i -> {
 
-        // Verifico che la quantità da dedurre non sia minore o uguale a zero o che non sia nulla
-        if (quantity == null || quantity <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantità da dedurre è inferiore o uguale a zero");
+            Inventory inv = inventoryRepository.findBySku(i.getSku()).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        // Verifico che la quantità richiesta non sia maggiore della giacenza
-        if (quantity > inv.getQuantity()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"La quantità richiesta è inferiore alla giacenza." );
-        }
+            // Verifico che la quantità da dedurre non sia minore o uguale a zero o che non sia nulla
+            if (i.getQuantity() == null || i.getQuantity() <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantità da dedurre è inferiore o uguale a zero");
 
-        inv.setQuantity(inv.getQuantity() - quantity);
-        inventoryRepository.save(inv);
+            // Verifico che la quantità richiesta non sia maggiore della giacenza
+            if (i.getQuantity() > inv.getQuantity()){
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"La quantità richiesta è inferiore alla giacenza." );
+            }
+
+            inv.setQuantity(inv.getQuantity() - i.getQuantity());
+            inventoryRepository.save(inv);
+        });
 
     }
 
