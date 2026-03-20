@@ -33,15 +33,15 @@ services:
   mysql:
     image: mysql:8.0
     container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root1234
     ports:
       - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d:ro
+      - ./mysql-init/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
     networks:
       - app-network
+    env_file:
+      - ./secrets.env
 
   config-server:
     image: config-server:latest
@@ -59,6 +59,8 @@ services:
       - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:/app/config
     networks:
       - app-network
+    env_file:
+      - ./secrets.env
 
   eureka-server:
     image: eureka-server:latest
@@ -88,6 +90,8 @@ services:
       - config-server
     networks:
       - app-network
+    env_file:
+      - ./secrets.env
 
   user-service:
      image: user-service:latest
@@ -101,9 +105,10 @@ services:
      environment:
        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
        SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-
      networks:
        - app-network
+     env_file:
+       - ./secrets.env
 
   product-service:
      image: product-service:latest
@@ -117,9 +122,10 @@ services:
      environment:
        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
        SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-
      networks:
        - app-network
+     env_file:
+       - ./secrets.env
 
 
   inventory-service:
@@ -134,9 +140,10 @@ services:
      environment:
        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
        SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-
      networks:
        - app-network
+     env_file:
+       - ./secrets.env
 
   order-service:
      image: order-service:latest
@@ -154,6 +161,8 @@ services:
        SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
      networks:
        - app-network
+     env_file:
+       - ./secrets.env
 
   notification-service:
      image: notification-service:latest
@@ -170,6 +179,8 @@ services:
        SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
      networks:
        - app-network
+     env_file:
+       - ./secrets.env
 
 volumes:
   mysql-data:
