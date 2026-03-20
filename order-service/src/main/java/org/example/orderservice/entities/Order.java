@@ -35,7 +35,7 @@ public class Order {
     private BigDecimal total;
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus orderStatus = OrderStatus.STATUS_BOZZA;
+    private OrderStatus orderStatus = OrderStatus.BOZZA;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

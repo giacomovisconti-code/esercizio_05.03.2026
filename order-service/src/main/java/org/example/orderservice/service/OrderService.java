@@ -139,7 +139,7 @@ public class OrderService {
 
         // Creo ordine
         Order order = new Order();
-        order.setOrderStatus(OrderStatus.STATUS_BOZZA);
+        order.setOrderStatus(OrderStatus.BOZZA);
         order.setActive(true);
         System.out.println("DEBUG: Stato ordine prima del save: " + order.getActive());
 
@@ -181,7 +181,7 @@ public class OrderService {
         if (!order.getActive()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine disattivato, riattivalo per applicare le modifiche!");
 
         // Controllo se lo stato dell'ordine è compatibie con la modifica
-        if (order.getOrderStatus() != OrderStatus.STATUS_BOZZA) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ordine è già in fase avanzata");
+        if (order.getOrderStatus() != OrderStatus.BOZZA) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ordine è già in fase avanzata");
 
         // Ricarico la disponibilità per la lista prodotti precedente
         order.getOrderItems().forEach(this::stockAddition);
@@ -220,12 +220,12 @@ public class OrderService {
         if (order.getDeleted()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine eliminato, creane uno nuovo!");
         if (!order.getActive()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine disattivato, riattivalo per applicare le modifiche!");
 
-        if(order.getOrderStatus().equals(OrderStatus.STATUS_BOZZA) && status.equals("STATUS_CONFERMATO")){
-            order.setOrderStatus(OrderStatus.STATUS_CONFERMATO);
-        } else if (order.getOrderStatus().equals(OrderStatus.STATUS_CONFERMATO) && status.equals("STATUS_IN_LAVORAZIONE")){
-            order.setOrderStatus(OrderStatus.STATUS_IN_LAVORAZIONE);
-        } else if(order.getOrderStatus().equals(OrderStatus.STATUS_IN_LAVORAZIONE) && status.equals("STATUS_EMESSO")){
-            order.setOrderStatus(OrderStatus.STATUS_EMESSO);
+        if(order.getOrderStatus().equals(OrderStatus.BOZZA) && status.equals("CONFERMATO")){
+            order.setOrderStatus(OrderStatus.CONFERMATO);
+        } else if (order.getOrderStatus().equals(OrderStatus.CONFERMATO) && status.equals("IN_LAVORAZIONE")){
+            order.setOrderStatus(OrderStatus.IN_LAVORAZIONE);
+        } else if(order.getOrderStatus().equals(OrderStatus.IN_LAVORAZIONE) && status.equals("EMESSO")){
+            order.setOrderStatus(OrderStatus.EMESSO);
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Stato ordine non compatibile con la modifica richiesta!");
         }

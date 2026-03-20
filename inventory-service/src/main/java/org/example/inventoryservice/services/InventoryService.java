@@ -1,4 +1,4 @@
-package org.example.inventoryservice.servicies;
+package org.example.inventoryservice.services;
 
 import jakarta.transaction.Transactional;
 import org.example.inventoryservice.dto.StockChange;
@@ -26,11 +26,11 @@ public class InventoryService {
 
     //* UTILS
     // Validation
-    private void StockChangeValidation(StockChange stock) throws  Exception {
+    private void StockChangeValidation(StockChange stock) {
 
         // Verifico se il productId è presente in Inventory
         if (inventoryRepository.findBySku(stock.getSku()).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Non esiste un prodotto con qusto ProductID");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Non esiste un prodotto con questo ProductID");
         }
 
         // Controllo se la quantità inserità dall'utente non è minore di Zero
@@ -63,7 +63,7 @@ public class InventoryService {
         if (stockOpt.isEmpty()){
 
             // Se non esiste lancio un' Eccezione
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Non esiste un prodotto con qusto ProductID");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Non esiste un prodotto con questo ProductID");
         }
 
         // Se esiste ritorno convertendolo in Dto
@@ -72,7 +72,7 @@ public class InventoryService {
 
     //? CREAZIONE GIACENZA
     // Creazione automatica nel momento dell'aggiunta del prodotto
-    public void initializeStock(UUID sku) throws Exception {
+    public void initializeStock(UUID sku) {
 
         // Controllo se il prodotto è già presente in inventario
         if (inventoryRepository.findBySku(sku).isPresent()){
@@ -90,12 +90,12 @@ public class InventoryService {
 
     //? MODIFICA GIACENZA
     // Modifica manuale
-    public void modifyStock(StockChange stockChange) throws Exception {
+    public void modifyStock(StockChange stockChange) {
 
         // Valido il Dto in entrata
         StockChangeValidation(stockChange);
 
-        Inventory stock = inventoryRepository.findBySku(stockChange.getSku()).get();
+        Inventory stock = inventoryRepository.findBySku(stockChange.getSku()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST , "Stock non presente"));
 
         // Modifico la quantità
         stock.setQuantity(stockChange.getQuantity());
@@ -107,16 +107,9 @@ public class InventoryService {
     // Aggiunta (il numero inserito si somma alla giacenza corrente)
     @Transactional
     public void addStock(UUID sku, Long quantity){
-        Optional<Inventory> invOpt = inventoryRepository.findBySku(sku);
+        Inventory inv = inventoryRepository.findBySku(sku).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        // Verifico se è presente la giacenza per un prodotto con quel productId
-        if (invOpt.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        Inventory inv = invOpt.get();
-
-        if (quantity <= 0){
+        if (quantity == null || quantity <= 0){
             throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Inserire una quantità positiva.");
         }
 
@@ -128,15 +121,12 @@ public class InventoryService {
     // Deduzione (il numero inserito si sottrae alla giacenza corrente)
     @Transactional
     public void deductStock(UUID sku, Long quantity){
-        Optional<Inventory> invOpt = inventoryRepository.findBySku(sku);
+        Inventory inv = inventoryRepository.findBySku(sku).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        // Verifico se è presente la giacenza per un prodotto con quel productId
-        if (invOpt.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        // Verifico che la quantità da dedurre non sia minore o uguale a zero o che non sia nulla
+        if (quantity == null || quantity <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantità da dedurre è inferiore o uguale a zero");
 
-        Inventory inv = invOpt.get();
-
+        // Verifico che la quantità richiesta non sia maggiore della giacenza
         if (quantity > inv.getQuantity()){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"La quantità richiesta è inferiore alla giacenza." );
         }
@@ -147,7 +137,7 @@ public class InventoryService {
     }
 
     //? ELIMINAZIONE GIACENZA
-    // Eliminazione automatica con l'eliminazione del prootto
+    // Eliminazione automatica con l'eliminazione del prodotto
     @Transactional
     public void deleteStock(UUID sku){
 

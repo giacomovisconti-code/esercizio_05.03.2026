@@ -3,10 +3,9 @@ package org.example.inventoryservice.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.ws.rs.QueryParam;
 import org.example.inventoryservice.dto.StockChange;
 import org.example.inventoryservice.dto.StockRequest;
-import org.example.inventoryservice.servicies.InventoryService;
+import org.example.inventoryservice.services.InventoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -37,7 +36,7 @@ public class InventoryController {
     //! CREATE
     // Automatica con OpenFeign
     @PostMapping("/create/{productId}")
-    public ResponseEntity<String> createStock(@NotNull @PathVariable("productId") UUID productId) throws Exception {
+    public ResponseEntity<String> createStock(@NotNull @PathVariable("productId") UUID productId) {
         inventoryService.initializeStock(productId);
         return ResponseEntity.ok("Giacenza inizializzata");
     }
@@ -51,7 +50,7 @@ public class InventoryController {
         return ResponseEntity.ok("Giacenza ridotta con successo");
     }
 
-    //! ADDTION
+    //! ADDITION
     // Addition stock
     @PatchMapping("/addition/{sku}")
     @Validated
@@ -62,7 +61,7 @@ public class InventoryController {
 
     //! UPDATE
     @PatchMapping("/update")
-    public ResponseEntity<?> updateStock(@Valid @RequestBody StockChange stockChange) throws Exception {
+    public ResponseEntity<?> updateStock(@Valid @RequestBody StockChange stockChange) {
         inventoryService.modifyStock(stockChange);
         return ResponseEntity.ok("Giacenza modificata correttamente");
     }
