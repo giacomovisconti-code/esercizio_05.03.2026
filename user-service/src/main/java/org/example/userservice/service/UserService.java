@@ -6,6 +6,8 @@ import org.example.userservice.dto.RegisterRequest;
 import org.example.userservice.dto.UserResponse;
 import org.example.userservice.entities.User;
 import org.example.userservice.enums.Role;
+import org.example.userservice.exceptions.Errors;
+import org.example.userservice.exceptions.UserExcpetion;
 import org.example.userservice.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -40,7 +42,7 @@ public class UserService {
     public void register(RegisterRequest registerRequest) throws Exception {
 
             if (userRepository.existsByUsername(registerRequest.getUsername())){
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Username già in uso");
+                throw new UserExcpetion(Errors.USERNAME_ALREADY_REGISTERED.key(), Errors.USERNAME_ALREADY_REGISTERED.message());
             }
 
             User user = new User();
@@ -59,7 +61,7 @@ public class UserService {
     }
 
     public UserResponse getUser(LoginRequest userLogin){
-        User u = userRepository.findUserByUsername(userLogin.getUsername()).orElseThrow(()-> new ResponseStatusException(HttpStatus.CONFLICT, "Non esiste uno user con questo nome"));
+        User u = userRepository.findUserByUsername(userLogin.getUsername()).orElseThrow(()-> new UserExcpetion(Errors.USER_NOT_FOUND.key(), Errors.USER_NOT_FOUND.message()));
 
         return convertEntityToDto(u);
     }

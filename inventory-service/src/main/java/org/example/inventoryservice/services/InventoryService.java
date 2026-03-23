@@ -4,6 +4,8 @@ import jakarta.transaction.Transactional;
 import org.example.inventoryservice.dto.StockChange;
 import org.example.inventoryservice.dto.StockRequest;
 import org.example.inventoryservice.entities.Inventory;
+import org.example.inventoryservice.exceptions.InventoryException;
+import org.example.inventoryservice.exceptions.handler.Errors;
 import org.example.inventoryservice.repositories.InventoryRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,12 +32,12 @@ public class InventoryService {
 
         // Verifico se il productId è presente in Inventory
         if (inventoryRepository.findBySku(stock.getSku()).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Non esiste un prodotto con questo ProductID");
+            throw new InventoryException(Errors.STOCK_NOT_FOUND.key(), Errors.STOCK_NOT_FOUND.message());
         }
 
         // Controllo se la quantità inserità dall'utente non è minore di Zero
         if (stock.getQuantity() < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantità deve essere maggiore di 0");
+            throw new InventoryException(Errors.INVALID_STOCK_QTY.key(), Errors.INVALID_STOCK_QTY.message());
         }
     }
 
@@ -63,7 +65,7 @@ public class InventoryService {
         if (stockOpt.isEmpty()){
 
             // Se non esiste lancio un' Eccezione
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Non esiste un prodotto con questo ProductID");
+            throw new InventoryException(Errors.STOCK_NOT_FOUND.key(), Errors.STOCK_NOT_FOUND.message());
         }
 
         // Se esiste ritorno convertendolo in Dto
@@ -77,7 +79,7 @@ public class InventoryService {
         // Controllo se il prodotto è già presente in inventario
         if (inventoryRepository.findBySku(sku).isPresent()){
             // Se presente lancio una eccezione di conflitto
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Prodotto già inventariato");
+            throw new InventoryException(Errors.STOCK_ALREADY_REGISTERED.key(), Errors.STOCK_ALREADY_REGISTERED.message());
         }
 
         // Se non è presente lo inizializzo a zero, con productId inserito
@@ -95,7 +97,7 @@ public class InventoryService {
         // Valido il Dto in entrata
         StockChangeValidation(stockChange);
 
-        Inventory stock = inventoryRepository.findBySku(stockChange.getSku()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST , "Stock non presente"));
+        Inventory stock = inventoryRepository.findBySku(stockChange.getSku()).orElseThrow(() -> new InventoryException(Errors.STOCK_NOT_FOUND.key(), Errors.STOCK_NOT_FOUND.message()));
 
         // Modifico la quantità
         stock.setQuantity(stockChange.getQuantity());
@@ -107,13 +109,13 @@ public class InventoryService {
     // Aggiunta (il numero inserito si somma alla giacenza corrente)
     @Transactional
     public void addStock(List<StockChange> items){
-        if (items.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nessun prodotto inserito");
+        if (items.isEmpty()) throw new InventoryException(Errors.STOCK_NOT_FOUND.key(), Errors.STOCK_NOT_FOUND.message());
         items.forEach( i -> {
 
-            Inventory inv = inventoryRepository.findBySku(i.getSku()).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
+            Inventory inv = inventoryRepository.findBySku(i.getSku()).orElseThrow(()-> new InventoryException(Errors.STOCK_NOT_FOUND.key(), Errors.STOCK_NOT_FOUND.message()));
 
             // Verifico che la quantità da dedurre non sia minore o uguale a zero o che non sia nulla
-            if (i.getQuantity() == null || i.getQuantity() <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantità da dedurre è inferiore o uguale a zero");
+            if (i.getQuantity() == null || i.getQuantity() <= 0) throw new InventoryException(Errors.INVALID_STOCK_QTY.key(), Errors.INVALID_STOCK_QTY.message());
 
             inv.setQuantity(inv.getQuantity() + i.getQuantity());
             inventoryRepository.save(inv);
@@ -125,17 +127,17 @@ public class InventoryService {
     // Deduzione (il numero inserito si sottrae alla giacenza corrente)
     @Transactional
     public void deductStock(List<StockChange> items){
-        if (items.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nessun prodotto inserito");
+        if (items.isEmpty()) throw new InventoryException(Errors.NO_ITEMS.key(), Errors.NO_ITEMS.message());
         items.forEach( i -> {
 
-            Inventory inv = inventoryRepository.findBySku(i.getSku()).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
+            Inventory inv = inventoryRepository.findBySku(i.getSku()).orElseThrow(()-> new InventoryException(Errors.STOCK_NOT_FOUND.key(), Errors.STOCK_NOT_FOUND.message()));
 
             // Verifico che la quantità da dedurre non sia minore o uguale a zero o che non sia nulla
-            if (i.getQuantity() == null || i.getQuantity() <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantità da dedurre è inferiore o uguale a zero");
+            if (i.getQuantity() == null || i.getQuantity() <= 0) throw new InventoryException(Errors.INVALID_STOCK_QTY.key(), Errors.INVALID_STOCK_QTY.message());
 
             // Verifico che la quantità richiesta non sia maggiore della giacenza
             if (i.getQuantity() > inv.getQuantity()){
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"La quantità richiesta è inferiore alla giacenza." );
+                throw new InventoryException(Errors.NOT_ENOUGH_STOCK.key(), Errors.NOT_ENOUGH_STOCK.message());
             }
 
             inv.setQuantity(inv.getQuantity() - i.getQuantity());
@@ -151,7 +153,7 @@ public class InventoryService {
 
         // Verifico l'esistenza del prodotto con il productId in entrata
         if (inventoryRepository.findBySku(sku).isEmpty()){
-            throw  new ResponseStatusException(HttpStatus.NOT_FOUND, "Prodotto non trovato");
+            throw new InventoryException(Errors.STOCK_NOT_FOUND.key(), Errors.STOCK_NOT_FOUND.message());
         }
 
         // Se esistente elimino la giacenza

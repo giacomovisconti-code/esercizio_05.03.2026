@@ -11,6 +11,8 @@ import org.example.orderservice.dto.StockRequest;
 import org.example.orderservice.entities.Order;
 import org.example.orderservice.entities.OrderItems;
 import org.example.orderservice.enums.OrderStatus;
+import org.example.orderservice.exceptions.Errors;
+import org.example.orderservice.exceptions.OrderException;
 import org.example.orderservice.kafka.KafkaProducer;
 import org.example.orderservice.openfeign.InventoryClient;
 import org.example.orderservice.openfeign.ProductClient;
@@ -50,21 +52,22 @@ public class OrderService {
 
     //? UTILS
     // Circuit Breaker per product validation
-    @CircuitBreaker(name = "validation")
+    @CircuitBreaker(name = "validation", fallbackMethod = "fallBackProduct")
     private ProductDto productValidation(ItemToOrder itemToOrder) throws Exception {
         ProductDto p = productClient.getProduct(itemToOrder.getSku()).getBody();
-        if (p == null) throw new Exception("Prodotto non esistente! sku:" + itemToOrder.getSku());
+        if (p == null) throw new OrderException(Errors.PRODUCT_VALIDATION_NOT_FOUND.key(),Errors.PRODUCT_VALIDATION_NOT_FOUND.message());
         return p;
     }
 
     // Circuit Breaker per stock validation
-    @CircuitBreaker(name = "validation")
+    @CircuitBreaker(name = "validation", fallbackMethod = "fallBackInventory")
     private void stockValidation(ItemToOrder itemToOrder) throws Exception {
         StockRequest stock = inventoryClient.getStock(itemToOrder.getSku()).getBody();
-        if (stock.getQuantity() < itemToOrder.getQuantity()) throw new Exception("Quantità prodotto richiesta inferiore alla giacenza");
+        if (stock.getQuantity() < itemToOrder.getQuantity()) throw new OrderException(Errors.STOCK_VALIDATION_NOT_ENOUGH.key(), Errors.STOCK_VALIDATION_NOT_ENOUGH.message());
     }
 
-    @CircuitBreaker(name = "validation")
+    // Circuit Breaker per ridurre lo stock della lista di prodotti
+    @CircuitBreaker(name = "validation", fallbackMethod = "fallBackInventory")
     private void stockReduction(List<OrderItems> stocks){
         List<StockChange> l = new ArrayList<>();
         stocks.forEach(i -> {
@@ -75,8 +78,8 @@ public class OrderService {
         });
         inventoryClient.deductionStock(l);
     }
-
-    @CircuitBreaker(name = "validation")
+    // Circuit Breaker per aumentare lo stock della lista di prodotti
+    @CircuitBreaker(name = "validation", fallbackMethod = "fallBackInventory")
     private void stockAddition(List<OrderItems> stocks){
         List<StockChange> l = new ArrayList<>();
         stocks.forEach(i -> {
@@ -86,6 +89,13 @@ public class OrderService {
             l.add(s);
         });
         inventoryClient.additionStock(l);
+    }
+
+    private OrderException fallBackProduct(Exception e) {
+        return new OrderException(Errors.PRODUCT_SERVICE_DOWN.key(), Errors.PRODUCT_SERVICE_DOWN.message());
+    }
+    private OrderException fallBackInventory(Exception e) {
+        return new OrderException(Errors.INVENTORY_SERVICE_DOWN.key(), Errors.INVENTORY_SERVICE_DOWN.message());
     }
 
     // Verifico l'esistenza e la disponibilità del prodotto
@@ -128,13 +138,13 @@ public class OrderService {
 
     //! GET SINGLE ORDER
     public Order getSingleOrderById(UUID orderId, UUID userId, String usRole) {
-        Order o = orderRepository.findByIdAndDeletedFalse(orderId).orElseThrow(()->new RuntimeException("Nessun ordine trovato"));
+        Order o = orderRepository.findByIdAndDeletedFalse(orderId).orElseThrow(()-> new OrderException(Errors.ORDER_NOT_FOUND.key(), Errors.ORDER_NOT_FOUND.message()));
 
         if (usRole.equals("ROLE_ADMIN") || (usRole.equals("ROLE_USER") && userId.equals(o.getUserId())) ) {
 
             return o;
         }
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Non hai i permessi per visualizzare qusta risorsa");
+        throw new OrderException(Errors.USER_NOT_ALLOWED_FOR_ORDER.key(), Errors.USER_NOT_ALLOWED_FOR_ORDER.message());
     }
 
     //! CREATE ORDER
@@ -142,7 +152,7 @@ public class OrderService {
     public void createOrder(List<ItemToOrder> itemList, UUID userId) throws Exception {
 
         // Controllo che userID non sia null
-        if (userId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "UserId is null");
+        if (userId == null) throw new OrderException(Errors.USER_NOT_ALLOWED_FOR_ORDER.key(), Errors.USER_NOT_ALLOWED_FOR_ORDER.message());
 
         // Valido i prodotti inseriti
         List<OrderItemDraft> orderDraft = orderValidation(itemList);
@@ -182,15 +192,15 @@ public class OrderService {
     //! UPDATE
     public void updateOrder(UUID orderId, List<ItemToOrder> itemList) throws Exception {
         // Trovo l'ordine
-        Order order = orderRepository.findOrderById(orderId).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(()-> new OrderException(Errors.ORDER_NOT_FOUND.key(), Errors.ORDER_NOT_FOUND.message()));
 
 
         // Controllo se l'ordine è disattivato o eliminato
-        if (order.getDeleted()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine eliminato, creane uno nuovo!");
-        if (!order.getActive()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine disattivato, riattivalo per applicare le modifiche!");
+        if (order.getDeleted()) throw new OrderException(Errors.ORDER_ELIMINATED.key(), Errors.ORDER_ELIMINATED.message());
+        if (!order.getActive()) throw new OrderException(Errors.ORDER_DEACTIVATED.key(), Errors.ORDER_DEACTIVATED.message());
 
         // Controllo se lo stato dell'ordine è compatibie con la modifica
-        if (order.getOrderStatus() != OrderStatus.BOZZA) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ordine è già in fase avanzata");
+        if (order.getOrderStatus() != OrderStatus.BOZZA) throw new OrderException(Errors.ORDER_STATUS_INCOMPATIBLE.key(), Errors.ORDER_STATUS_INCOMPATIBLE.message());
 
         // Ricarico la disponibilità per la lista prodotti precedente
         stockAddition(order.getOrderItems());
@@ -222,11 +232,11 @@ public class OrderService {
 
     //! CHANGE ORDER STATUS
     public void changeOrderStatus(UUID orderId, String status){
-        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new OrderException(Errors.ORDER_NOT_FOUND.key(), Errors.ORDER_NOT_FOUND.message()));
 
         // Controllo se l'ordine è disattivato o eliminato
-        if (order.getDeleted()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine eliminato, creane uno nuovo!");
-        if (!order.getActive()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine disattivato, riattivalo per applicare le modifiche!");
+        if (order.getDeleted()) throw new OrderException(Errors.ORDER_ELIMINATED.key(), Errors.ORDER_ELIMINATED.message());
+        if (!order.getActive()) throw new OrderException(Errors.ORDER_DEACTIVATED.key(), Errors.ORDER_DEACTIVATED.message());
 
         if(order.getOrderStatus().equals(OrderStatus.BOZZA) && status.equals("CONFERMATO")){
             order.setOrderStatus(OrderStatus.CONFERMATO);
@@ -235,7 +245,7 @@ public class OrderService {
         } else if(order.getOrderStatus().equals(OrderStatus.IN_LAVORAZIONE) && status.equals("EMESSO")){
             order.setOrderStatus(OrderStatus.EMESSO);
         } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Stato ordine non compatibile con la modifica richiesta!");
+            throw new OrderException(Errors.ORDER_STATUS_INCOMPATIBLE.key(), Errors.ORDER_STATUS_INCOMPATIBLE.message());
         }
         orderRepository.save(order);
     }
@@ -243,7 +253,7 @@ public class OrderService {
     //!DeActive
     // Disattivazione ordine
     public void deactiveOrder(UUID orderId) {
-        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new OrderException(Errors.ORDER_NOT_FOUND.key(),Errors.ORDER_NOT_FOUND.message()));
         order.setActive(false);
         orderRepository.save(order);
     }
@@ -252,9 +262,9 @@ public class OrderService {
     // Riattivazione ordine
     public void reactivateOrder(UUID orderId) {
 
-        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
-        if (order.getDeleted()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine eliminato, non è possibile riattivarlo!");
-        if (order.getActive()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ordine già attivo!");
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new OrderException(Errors.ORDER_NOT_FOUND.key(), Errors.ORDER_NOT_FOUND.message()));
+        if (order.getDeleted()) throw new OrderException(Errors.ORDER_ELIMINATED.key(), Errors.ORDER_ELIMINATED.message());
+        if (!order.getActive()) throw new OrderException(Errors.ORDER_DEACTIVATED.key(), Errors.ORDER_DEACTIVATED.message());
         order.setActive(true);
         orderRepository.save(order);
     }
@@ -262,7 +272,7 @@ public class OrderService {
     //! DELETE
     // Soft delete
     public void deleteOrder(UUID orderId) {
-        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordine non trovato!"));
+        Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new OrderException(Errors.ORDER_NOT_FOUND.key(), Errors.ORDER_NOT_FOUND.message()));
 
         // Ricarico la disponibilità per la lista prodotti precedente
         stockAddition(order.getOrderItems());
