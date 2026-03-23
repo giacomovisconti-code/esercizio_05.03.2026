@@ -61,6 +61,15 @@ GIORNO 10
 - testing
 - fix su delete order
 
+GIORNO 11
+- CONSEGNA ESERCIZIO
+- debug generale
+- risolti problemi sulla sicurezza
+
+GIORNO 12
+- docker compose 
+- typos
+- refactor logica registrazione ordine
 
 
 

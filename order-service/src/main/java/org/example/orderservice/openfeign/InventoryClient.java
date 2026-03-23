@@ -16,9 +16,9 @@ public interface InventoryClient {
     @GetMapping("/inventory/{productId}")
     public ResponseEntity<StockRequest> getStock(@PathVariable("productId") UUID productId);
 
-    @PutMapping("/deduction")
+    @PutMapping("/inventory/deduction")
     public ResponseEntity<String> deductionStock(@Valid @RequestBody List<StockChange> list);
 
-    @PutMapping("/addition")
+    @PutMapping("/inventory/addition")
     public ResponseEntity<String> additionStock(@Valid @RequestBody List<StockChange> list);
 }
