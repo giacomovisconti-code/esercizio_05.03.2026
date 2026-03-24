@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class RestExceptionHandler {
     @ExceptionHandler(ProductException.class)
-    public final ResponseEntity<ErrorRes> exceptionTokenHandler(Exception e){
+    public final ResponseEntity<ErrorRes> productExceptionHandler(Exception e){
 
         ErrorRes err = new ErrorRes();
 

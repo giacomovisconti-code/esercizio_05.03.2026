@@ -71,6 +71,11 @@ GIORNO 12
 - typos
 - refactor logica registrazione ordine
 
+GIORNO 13
+- custom exceptions
+
+GIORNO 14
+- Test custom exceptions
 
 
 

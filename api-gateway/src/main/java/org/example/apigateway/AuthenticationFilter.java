@@ -43,11 +43,11 @@ public class AuthenticationFilter implements GatewayFilter {
 
             // Verifico se il token è presente nell'Header
             if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)){
-                throw new TokenError(Errors.NO_TOKEN.key(), Errors.NO_TOKEN.message());
+                throw new TokenError(Errors.NO_TOKEN.message(), Errors.NO_TOKEN.key());
             }
 
             String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
-            if (!authHeader.startsWith("Bearer ") || authHeader.isBlank()) throw new TokenError(Errors.INVALID_TOKEN.key(), Errors.INVALID_TOKEN.message());
+            if (!authHeader.startsWith("Bearer ") || authHeader.isBlank()) throw new TokenError(Errors.INVALID_TOKEN.message(), Errors.INVALID_TOKEN.key());
             String token = authHeader.substring(7);
 
             try {
@@ -89,7 +89,7 @@ public class AuthenticationFilter implements GatewayFilter {
                 throw e;
             } catch (Exception e) {
 
-                throw new TokenError(Errors.INVALID_TOKEN.key(), Errors.INVALID_TOKEN.message());
+                throw new TokenError(Errors.INVALID_TOKEN.message(), Errors.INVALID_TOKEN.key());
             }
         }
         return chain.filter(exchange);
@@ -100,13 +100,13 @@ public class AuthenticationFilter implements GatewayFilter {
 
         if (pathMatcher.match("/users/all", path) && method == HttpMethod.GET) {
             if (!role.equals("ROLE_ADMIN")) {
-               throw  new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+               throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
             }
         }
 
         if(pathMatcher.match("/users/giveAdmin/*", path) && method == HttpMethod.PATCH) {
             if (!role.equals("ROLE_ADMIN")){
-                throw  new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+                throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
             }
         }
 
@@ -117,21 +117,21 @@ public class AuthenticationFilter implements GatewayFilter {
         if (pathMatcher.match("/products/create", path) &&
                 method == HttpMethod.POST) {
             if (!role.equals("ROLE_ADMIN")) {
-               throw  new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+               throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
             }
         }
 
         if (pathMatcher.match("/products/update", path) &&
                 method == HttpMethod.PATCH) {
             if (!role.equals("ROLE_ADMIN")) {
-               throw  new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+               throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
             }
         }
 
         if (pathMatcher.match("/products/delete/*", path) &&
                 method == HttpMethod.DELETE) {
             if (!role.equals("ROLE_ADMIN")) {
-               throw  new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+               throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
             }
         }
 
@@ -149,20 +149,20 @@ public class AuthenticationFilter implements GatewayFilter {
                 method == HttpMethod.PATCH) {
 
             if (!role.equals("ROLE_ADMIN")) {
-                throw  new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+                throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
             }
         }
 
         if (pathMatcher.match("/orders/create", path) && method == HttpMethod.POST){
-            if (!role.equals("ROLE_USER")) throw  new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+            if (!role.equals("ROLE_USER")) throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
         }
 
         if (method == HttpMethod.GET && pathMatcher.match("/orders", path)) {
-            if (!role.equals("ROLE_ADMIN")) throw  new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+            if (!role.equals("ROLE_ADMIN")) throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
         }
 
         if (method == HttpMethod.GET && pathMatcher.match("/orders/*", path)) {
-            if (!role.equals("ROLE_ADMIN") && !role.equals("ROLE_USER")) throw  new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+            if (!role.equals("ROLE_ADMIN") && !role.equals("ROLE_USER")) throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
         }
 
         return Mono.empty();
@@ -170,7 +170,7 @@ public class AuthenticationFilter implements GatewayFilter {
     }
     private Mono<Void> inventoryFilters(String role, String path, HttpMethod method, ServerWebExchange exchange) throws FilterError  {
         if (pathMatcher.match("/inventory/**", path) && !role.equals("ROLE_ADMIN")) {
-            throw new FilterError(Errors.UNAUTHORIZED.key(), Errors.UNAUTHORIZED.message());
+            throw new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
         }
         return Mono.empty();
     }

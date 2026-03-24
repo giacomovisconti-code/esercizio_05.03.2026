@@ -7,7 +7,10 @@ import org.springframework.http.HttpStatus;
 public class OrderException extends RuntimeException {
     private final HttpStatus status = HttpStatus.BAD_REQUEST;
     private String code;
-    public OrderException(String message, String code) {
+    private String message;
+    public OrderException(String code, String message) {
         super();
+        this.code = code;
+        this.message = message;
     }
 }

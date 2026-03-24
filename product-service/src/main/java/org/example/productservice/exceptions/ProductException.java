@@ -7,7 +7,10 @@ import org.springframework.http.HttpStatus;
 public class ProductException extends RuntimeException {
     private final HttpStatus status = HttpStatus.BAD_REQUEST;
     private String code;
+    private String message;
     public ProductException(String code, String message) {
         super();
+        this.code = code;
+        this.message = message;
     }
 }

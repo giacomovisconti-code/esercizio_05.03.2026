@@ -1,21 +1,20 @@
-package org.example.orderservice.exceptions.handler;
 
-import org.example.orderservice.exceptions.ErrorRes;
-import org.example.orderservice.exceptions.OrderException;
+import org.example.userservice.exceptions.ErrorRes;
+import org.example.userservice.exceptions.UserExcpetion;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
-    @ExceptionHandler(OrderException.class)
+    @ExceptionHandler(UserExcpetion.class)
     public final ResponseEntity<ErrorRes> exceptionTokenHandler(Exception e){
 
         ErrorRes err = new ErrorRes();
 
-        err.setStatus(((OrderException)e).getStatus());
-        err.setCode(((OrderException)e).getCode());
-        err.setMessage(((OrderException)e).getMessage());
+        err.setStatus(((UserExcpetion)e).getStatus());
+        err.setCode(((UserExcpetion)e).getCode());
+        err.setMessage(((UserExcpetion)e).getMessage());
 
 
         return ResponseEntity.status(err.getStatus()).body(err);

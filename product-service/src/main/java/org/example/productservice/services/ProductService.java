@@ -57,9 +57,9 @@ public class ProductService {
     // Validazione del Dto in entrata
     private void productValidation(ProductDto p) throws ResponseStatusException {
         if (p.getPrice() == null){
-            throw new ProductException(Errors.PRODUCT_NOT_FOUND.key(), Errors.PRODUCT_NOT_FOUND.message());
+            throw new ProductException(Errors.INVALID_PRODUCT_PRICE.key(), Errors.INVALID_PRODUCT_PRICE.message());
         }
-        if (p.getPrice().min(new BigDecimal(0)).equals(p.getPrice()) ){
+        if (p.getPrice().min(BigDecimal.ZERO).equals(p.getPrice())){
             throw new ProductException(Errors.INVALID_PRODUCT_PRICE.key(), Errors.INVALID_PRODUCT_PRICE.message());
         }
 

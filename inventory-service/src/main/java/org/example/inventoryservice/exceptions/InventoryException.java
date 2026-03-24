@@ -7,7 +7,10 @@ import org.springframework.http.HttpStatus;
 public class InventoryException extends RuntimeException {
     private final HttpStatus status = HttpStatus.BAD_REQUEST;
     private String code;
-    public InventoryException(String message, String code) {
+    private String message;
+    public InventoryException(String code, String message) {
         super();
+        this.message = message;
+        this.code = code;
     }
 }

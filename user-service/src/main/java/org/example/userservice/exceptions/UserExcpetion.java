@@ -7,7 +7,11 @@ import org.springframework.http.HttpStatus;
 public class UserExcpetion extends RuntimeException {
     private final HttpStatus status = HttpStatus.BAD_REQUEST;
     private String code;
-    public UserExcpetion(String message, String code) {
+    private String message;
+    public UserExcpetion(String code, String message) {
+
         super();
+        this.code = code;
+        this.message = message;
     }
 }
