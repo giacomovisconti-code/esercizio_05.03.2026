@@ -10,13 +10,16 @@ import org.example.productservice.openfeign.InventoryClient;
 import org.example.productservice.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -87,12 +90,11 @@ public class ProductService {
     }
 
     //! Ricerca prodotto per nome
-    public List<ProductDto> getProductsByName(String name){
-        List<Product> productList = productRepository.findByNameContaining(name);
+    public Page<ProductDto> getProductsByName(String name, int pageSize, int page){
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<Product> productList = productRepository.findByNameContaining(name, pageable);
 
-        return productList.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        return productList.map(this::convertToDto);
     }
 
     //! CREATE
