@@ -1,12 +1,16 @@
 package org.example.inventoryservice.controller;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.example.inventoryservice.dto.StockChange;
 import org.example.inventoryservice.dto.StockRequest;
 import org.example.inventoryservice.services.InventoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +27,11 @@ public class InventoryController {
 
     //! INDEX
     @GetMapping
-    public ResponseEntity<List<StockRequest>> getAllStocks(){
-        return ResponseEntity.ok(inventoryService.getAllStock());
+    public ResponseEntity<Page<StockRequest>> getAllStocks(@Parameter(description = "Risultati per pagina", schema = @Schema(defaultValue = "9", minimum = "1"))
+                                                               @RequestParam(name = "pageSize", required = false, defaultValue = "9") @Positive(message = "Deve essere >= 1") int pageSize,
+                                                           @Parameter(description = "Indice della pagina corrente", schema = @Schema(defaultValue = "0", minimum = "0"))
+                                                               @RequestParam(name = "page", required = false, defaultValue = "0") @Min(value = 0, message = "Indice di pagina deve essere >= 0") int page){
+        return ResponseEntity.ok(inventoryService.getAllStock(pageSize, page));
     }
 
     //! SHOW

@@ -18,6 +18,9 @@ import org.example.orderservice.openfeign.InventoryClient;
 import org.example.orderservice.openfeign.ProductClient;
 import org.example.orderservice.repositories.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -132,8 +135,9 @@ public class OrderService {
     }
 
     //! GET ALL ORDERS
-    public List<Order> getAllOrders(){
-        return orderRepository.findAllByDeletedFalse();
+    public Page<Order> getAllOrders(int pageSize, int page){
+        Pageable pageable = PageRequest.of(page, pageSize);
+        return orderRepository.findAllByDeletedFalse(pageable);
     }
 
     //! GET SINGLE ORDER

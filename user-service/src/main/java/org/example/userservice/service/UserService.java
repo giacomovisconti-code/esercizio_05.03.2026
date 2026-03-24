@@ -10,6 +10,9 @@ import org.example.userservice.exceptions.Errors;
 import org.example.userservice.exceptions.UserExcpetion;
 import org.example.userservice.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -66,10 +69,9 @@ public class UserService {
         return convertEntityToDto(u);
     }
 
-    public List<UserResponse> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        return users.stream()
-                .map(this::convertEntityToDto)
-                .toList();
+    public Page<UserResponse> getAllUsers(int pageSize, int page) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<User> users = userRepository.findAll(pageable);
+        return users.map(this::convertEntityToDto);
     }
 }

@@ -9,6 +9,9 @@ import org.example.inventoryservice.exceptions.handler.Errors;
 import org.example.inventoryservice.repositories.InventoryRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -47,12 +50,11 @@ public class InventoryService {
     }
 
     //? LISTA DI GIACENZE
-    public List<StockRequest> getAllStock(){
-        List<Inventory> list = inventoryRepository.findAll();
+    public Page<StockRequest> getAllStock(int pageSize, int page){
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<Inventory> list = inventoryRepository.findAll(pageable);
 
-        return list.stream()
-                .map(this::convertInventoryToStockRequest)
-                .collect(Collectors.toList());
+        return list.map(this::convertInventoryToStockRequest);
     }
 
     //? SINGOLA GIACENZA
