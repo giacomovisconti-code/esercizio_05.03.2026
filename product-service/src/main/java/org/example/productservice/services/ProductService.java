@@ -69,17 +69,16 @@ public class ProductService {
     }
 
     //! INDEX
-    public List<ProductDto> findAllProducts(){
+    public Page<ProductDto> findAllProducts(int pageSize, int page){
+        //Creo la paginazione per
+        Pageable pageable = PageRequest.of(pageSize, page);
 
         // Salvo la lista di prodotti
-        List<Product> productList = productRepository.findAll();
+        Page<Product> productList = productRepository.findAll(pageable);
 
         // Converto in Product DTO
-        return productList.stream()
-                // Per ogni elemento applica il metodo convertToDto
-                .map(this::convertToDto)
-                // E ritorna una lista di product dto
-                .collect(Collectors.toList());
+        return productList.map(this::convertToDto);
+
     }
 
     //! SHOW

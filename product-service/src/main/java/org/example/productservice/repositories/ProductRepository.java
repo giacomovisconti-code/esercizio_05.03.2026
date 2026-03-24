@@ -12,6 +12,8 @@ import java.util.UUID;
 public interface ProductRepository extends JpaRepository<Product, UUID> {
     Optional<Product> findBySku(UUID sku);
 
+    Page<Product> findAll(Pageable pageable);
+
     Boolean existsBySku(UUID sku);
 
     void deleteBySku(UUID sku);
