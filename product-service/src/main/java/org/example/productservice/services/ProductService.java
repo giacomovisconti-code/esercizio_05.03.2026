@@ -71,7 +71,7 @@ public class ProductService {
     //! INDEX
     public Page<ProductDto> findAllProducts(int pageSize, int page){
         //Creo la paginazione per
-        Pageable pageable = PageRequest.of(pageSize, page);
+        Pageable pageable = PageRequest.of(page, pageSize);
 
         // Salvo la lista di prodotti
         Page<Product> productList = productRepository.findAll(pageable);

@@ -28,7 +28,7 @@ public class ProductController {
 
     //? INDEX
     @GetMapping("/all")
-    public ResponseEntity<Page<ProductDto>> getAllProducts(@Parameter(description = "Quante pagine contiene", schema = @Schema(defaultValue = "9", minimum = "1"))
+    public ResponseEntity<Page<ProductDto>> getAllProducts(@Parameter(description = "Risultati per pagina", schema = @Schema(defaultValue = "9", minimum = "1"))
                                                                @RequestParam(name = "pageSize", required = false, defaultValue = "9") @Positive(message = "Deve essere >= 1") int pageSize,
                                                            @Parameter(description = "Indice della pagina corrente", schema = @Schema(defaultValue = "0", minimum = "0"))
                                                                @RequestParam(name = "page", required = false, defaultValue = "0") @Min(value = 0, message = "Indice di pagina deve essere >= 0") int page){
