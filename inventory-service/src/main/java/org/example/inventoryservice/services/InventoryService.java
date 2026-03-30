@@ -65,7 +65,7 @@ public class InventoryService {
     }
 
     //? SINGOLA GIACENZA
-    @Cacheable("stock")
+    @Cacheable(value = "stock", key = "#sku")
     public StockRequest getStockByProductId(UUID sku){
 
         // Cerco tramite il product id la giacenza relativa

@@ -43,6 +43,19 @@ services:
     env_file:
       - ./secrets.env
 
+  redis:
+    image: redis:8.6.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
   config-server:
     image: config-server:latest
     container_name: config-server
@@ -119,9 +132,12 @@ services:
        - eureka-server
        - config-server
        - mysql
+       - redis
      environment:
        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
        SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+       SPRING_DATA_REDIS_HOST: redis
+       SPRING_DATA_REDIS_PORT: 6379
      networks:
        - app-network
      env_file:
@@ -137,9 +153,12 @@ services:
        - eureka-server
        - config-server
        - mysql
+       - redis
      environment:
        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
        SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+       SPRING_DATA_REDIS_HOST: redis
+       SPRING_DATA_REDIS_PORT: 6379
      networks:
        - app-network
      env_file:
@@ -154,11 +173,14 @@ services:
        - eureka-server
        - config-server
        - mysql
+       - redis
        - kafka
      environment:
        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
        SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
        SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+       SPRING_DATA_REDIS_HOST: redis
+       SPRING_DATA_REDIS_PORT: 6379
      networks:
        - app-network
      env_file:

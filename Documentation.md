@@ -124,6 +124,7 @@ docker build -t product-service:latest ./product-service
 docker build -t inventory-service:latest ./inventory-service
 docker build -t order-service:latest ./order-service
 docker build -t notification-service:latest ./notification-service
+docker build -t config-server:latest ./config-server
 ```
 
 ### 3. Avvio Stack con Docker Compose

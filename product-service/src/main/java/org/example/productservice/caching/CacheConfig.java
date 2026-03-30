@@ -1,5 +1,8 @@
 package org.example.productservice.caching;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.example.productservice.dto.ProductDto;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +12,9 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.time.Duration;
 
@@ -19,28 +24,21 @@ public class CacheConfig {
 
     // configuro la cache
     @Bean
-    public RedisCacheConfiguration cacheConfiguration(){
-        return  RedisCacheConfiguration.defaultCacheConfig()
-                // setto la scadenza della cache
+    public CacheManager cacheManager(RedisConnectionFactory cf) {
+        RedisCacheConfiguration defaultCfg = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(60))
-                // disabilito il salvataggio in cache dei valori nulli
-                .disableCachingNullValues()
-                // serializzo i dati della cache come json
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+                .disableCachingNullValues();
 
-    }
+        RedisSerializer<ProductDto> productSerializer =
+                new Jackson2JsonRedisSerializer<>(ProductDto.class);
 
-    // Creo la cache
-    @Bean
-    public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory){
-        return RedisCacheManager.builder(redisConnectionFactory)
-                .cacheDefaults(cacheConfiguration())
+        RedisCacheConfiguration productCfg = defaultCfg.serializeValuesWith(
+                RedisSerializationContext.SerializationPair.fromSerializer(productSerializer));
+
+        return RedisCacheManager.builder(cf)
+                .cacheDefaults(defaultCfg)
+                .withCacheConfiguration("product", productCfg)
                 .build();
-    }
-
-    @Bean
-    public JedisConnectionFactory jedisConnectionFactory() {
-        return new JedisConnectionFactory();
     }
 
 }

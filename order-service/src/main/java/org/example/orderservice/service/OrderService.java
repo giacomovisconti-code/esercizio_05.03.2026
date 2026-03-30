@@ -1,5 +1,6 @@
 package org.example.orderservice.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.transaction.Transactional;
@@ -18,6 +19,7 @@ import org.example.orderservice.openfeign.InventoryClient;
 import org.example.orderservice.openfeign.ProductClient;
 import org.example.orderservice.repositories.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -52,6 +54,9 @@ public class OrderService {
     @Autowired
     private CacheManager cacheManager;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private static final String MESSAGE = """
     Email di conferma per utente:  %s,
     
@@ -63,19 +68,18 @@ public class OrderService {
     @CircuitBreaker(name = "validation", fallbackMethod = "fallBackProduct")
     private ProductDto productValidation(ItemToOrder itemToOrder) throws Exception {
 
-        // Assegno, se presente, il valore contenuto nella cache altrimenti lo imposto nullo
-        ProductDto p = Optional.ofNullable(cacheManager.getCache("product"))
-                .map(cache -> cache.get(itemToOrder.getSku(), ProductDto.class))
-                .orElse(null);
-
-        System.out.println(p);
-
-        // Se è nullo, effettua la chiamata al microservice dei prodotti
-        if (p == null){
-            p = productClient.getProduct(itemToOrder.getSku()).getBody();
+        Cache cache = cacheManager.getCache("product");
+        System.out.println(cache);
+        if (cache != null){
+            Cache.ValueWrapper wrapper = cache.get(itemToOrder.getSku());
+            System.out.println(wrapper);
+            if (wrapper != null && wrapper.get() != null){
+                ProductDto p = objectMapper.convertValue(wrapper.get(), ProductDto.class);
+                if (p == null) throw new OrderException(Errors.PRODUCT_VALIDATION_NOT_FOUND.key(),Errors.PRODUCT_VALIDATION_NOT_FOUND.message());
+                return p;
+            }
         }
-
-        if (p == null) throw new OrderException(Errors.PRODUCT_VALIDATION_NOT_FOUND.key(),Errors.PRODUCT_VALIDATION_NOT_FOUND.message());
+        ProductDto p = productClient.getProduct(itemToOrder.getSku()).getBody();
         return p;
     }
 
@@ -83,15 +87,19 @@ public class OrderService {
     @CircuitBreaker(name = "validation", fallbackMethod = "fallBackInventory")
     private void stockValidation(ItemToOrder itemToOrder) throws Exception {
 
-        StockRequest stock = Optional.ofNullable(cacheManager.getCache("stock"))
-                .map(cache -> cache.get(itemToOrder.getSku(), StockRequest.class))
-                .orElse(null);
-
-        System.out.println(stock);
-
-        if (stock == null) { stock = inventoryClient.getStock(itemToOrder.getSku()).getBody(); }
-
+        Cache cache = cacheManager.getCache("stock");
+        System.out.println(cache);
+        if (cache != null){
+            Cache.ValueWrapper wrapper = cache.get(itemToOrder.getSku());
+            System.out.println(wrapper);
+            if (wrapper != null && wrapper.get() != null){
+                StockRequest stock = objectMapper.convertValue(wrapper.get(), StockRequest.class);
+                if (stock.getQuantity() < itemToOrder.getQuantity()) throw new OrderException(Errors.STOCK_VALIDATION_NOT_ENOUGH.key(), Errors.STOCK_VALIDATION_NOT_ENOUGH.message());
+            }
+        }
+        StockRequest stock = inventoryClient.getStock(itemToOrder.getSku()).getBody();
         if (stock.getQuantity() < itemToOrder.getQuantity()) throw new OrderException(Errors.STOCK_VALIDATION_NOT_ENOUGH.key(), Errors.STOCK_VALIDATION_NOT_ENOUGH.message());
+
     }
 
     // Circuit Breaker per ridurre lo stock della lista di prodotti

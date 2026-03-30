@@ -89,7 +89,7 @@ public class ProductService {
     }
 
     //! SHOW
-    @Cacheable("product")
+    @Cacheable(value = "product", key = "#sku")
     public ProductDto getProductBySku(UUID sku){
     Product p = productRepository.findBySku(sku).orElseThrow(() -> new ProductException(Errors.PRODUCT_NOT_FOUND.key(), Errors.PRODUCT_NOT_FOUND.message()));
 
