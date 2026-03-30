@@ -10,11 +10,15 @@ import org.example.productservice.openfeign.InventoryClient;
 import org.example.productservice.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Objects;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 
@@ -28,6 +32,9 @@ public class ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @Autowired
     private InventoryClient inventoryClient;
@@ -82,6 +89,7 @@ public class ProductService {
     }
 
     //! SHOW
+    @Cacheable("product")
     public ProductDto getProductBySku(UUID sku){
     Product p = productRepository.findBySku(sku).orElseThrow(() -> new ProductException(Errors.PRODUCT_NOT_FOUND.key(), Errors.PRODUCT_NOT_FOUND.message()));
 
@@ -109,6 +117,9 @@ public class ProductService {
 
         productRepository.save(p);
 
+        // Elimino il dato dalla cache
+        Objects.requireNonNull(cacheManager.getCache("product")).evictIfPresent(productRequest.getSku());
+
         // Inizializzo la giacenza del prodotto a zero
         createStock(p.getSku());
     }
@@ -126,6 +137,9 @@ public class ProductService {
         p.setDescription(productRequest.getDescription());
 
         productRepository.save(p);
+
+        // Elimino il dato dalla cache
+        Objects.requireNonNull(cacheManager.getCache("product")).evictIfPresent(productRequest.getSku());
     }
 
     //! DELETE
@@ -138,10 +152,9 @@ public class ProductService {
         //Elimino anche la giacenza
         inventoryClient.deleteStock(sku);
 
+        // Elimino il dato dalla cache
+        Objects.requireNonNull(cacheManager.getCache("product")).evictIfPresent(sku);
+
     }
-
-
-
-
 
 }
