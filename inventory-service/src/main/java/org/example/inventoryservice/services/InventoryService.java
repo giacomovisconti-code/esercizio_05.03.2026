@@ -9,6 +9,9 @@ import org.example.inventoryservice.exceptions.handler.Errors;
 import org.example.inventoryservice.repositories.InventoryRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,6 +30,9 @@ public class InventoryService {
 
     @Autowired
     private InventoryRepository inventoryRepository;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     private final ModelMapper modelMapper = new ModelMapper();
 
@@ -58,6 +65,7 @@ public class InventoryService {
     }
 
     //? SINGOLA GIACENZA
+    @Cacheable("stock")
     public StockRequest getStockByProductId(UUID sku){
 
         // Cerco tramite il product id la giacenza relativa
@@ -75,6 +83,7 @@ public class InventoryService {
     }
 
     //? CREAZIONE GIACENZA
+    @CacheEvict(value = "stock", key = "#sku")
     // Creazione automatica nel momento dell'aggiunta del prodotto
     public void initializeStock(UUID sku) {
 
@@ -106,6 +115,8 @@ public class InventoryService {
 
         // Salvo lo stock
         inventoryRepository.save(stock);
+        // elimino il dato dalla cache
+        Objects.requireNonNull(cacheManager.getCache("stock")).evictIfPresent(stockChange.getSku());
     }
 
     // Aggiunta (il numero inserito si somma alla giacenza corrente)
@@ -121,6 +132,9 @@ public class InventoryService {
 
             inv.setQuantity(inv.getQuantity() + i.getQuantity());
             inventoryRepository.save(inv);
+
+            // elimino il dato dalla cache
+            Objects.requireNonNull(cacheManager.getCache("stock")).evictIfPresent(i.getSku());
         });
 
 
@@ -144,6 +158,9 @@ public class InventoryService {
 
             inv.setQuantity(inv.getQuantity() - i.getQuantity());
             inventoryRepository.save(inv);
+
+            // elimino il dato dalla cache
+            Objects.requireNonNull(cacheManager.getCache("stock")).evictIfPresent(i.getSku());
         });
 
     }
@@ -151,6 +168,7 @@ public class InventoryService {
     //? ELIMINAZIONE GIACENZA
     // Eliminazione automatica con l'eliminazione del prodotto
     @Transactional
+    @CacheEvict(value = "stock", key = "#sku")
     public void deleteStock(UUID sku){
 
         // Verifico l'esistenza del prodotto con il productId in entrata
