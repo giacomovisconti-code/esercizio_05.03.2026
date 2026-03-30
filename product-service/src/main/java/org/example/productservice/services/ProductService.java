@@ -59,8 +59,8 @@ public class ProductService {
     }
 
     // METODO FALLBACK PER IL CIRCUIT BREAKER INVNTORY SERVICE
-    private ProductException fallBack(Exception e) {
-        return new ProductException(Errors.STOCK_NOT_CREATED.key(), Errors.STOCK_NOT_CREATED.message());
+    private void fallBack(Exception e) {
+        throw new ProductException(Errors.STOCK_NOT_CREATED.key(), Errors.STOCK_NOT_CREATED.message());
     }
 
 
