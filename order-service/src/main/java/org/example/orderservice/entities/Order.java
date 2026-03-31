@@ -21,6 +21,7 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@NamedEntityGraph(name = "Order.orderItems", attributeNodes = @NamedAttributeNode("orderItems"))
 public class Order {
 
     @Id
