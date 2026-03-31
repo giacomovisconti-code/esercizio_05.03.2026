@@ -3,7 +3,8 @@ package org.example.apigateway.errors.handler;
 public enum Errors {
     INVALID_TOKEN("Token non valido o scaduto"),
     UNAUTHORIZED("Non sei autorizzato per accedere a questa risorsa"),
-    NO_TOKEN("Token non presente")
+    NO_TOKEN("Token non presente"),
+    TOO_MANY_REQUEST("Stai effettuando troppe richieste")
     ;
     private final String message;
 

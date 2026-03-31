@@ -8,6 +8,7 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 
 @Configuration
@@ -19,11 +20,28 @@ public class GatewayConfig {
     @Autowired
     private KeyResolver userKeyResolver;
 
+
+
     //? UTILS
+    // Rate Limiter per la rotta di Login
     @Bean
-    public RedisRateLimiter redisRateLimiter(){
-        return new RedisRateLimiter(1,1,1);
+    public RedisRateLimiter redisRateLimiterLogin(){
+        return new RedisRateLimiter(10,2,1);
     }
+
+    // Rate Limiter per la registrazione
+    @Bean
+    public RedisRateLimiter redisRateLimiterRegistration(){
+        return new RedisRateLimiter(1,4,1);
+    }
+
+    // Rate Limiter per la get di risorse
+    @Bean
+    @Primary
+    public RedisRateLimiter redisRateLimiterGetResources(){
+        return new RedisRateLimiter(60,40,1);
+    }
+
 
     //* Product Service
     @Bean
@@ -33,7 +51,7 @@ public class GatewayConfig {
                 .route("products-rate-limiter",p-> p.path("/api/products-service/products/all")
                 .filters(f->f
                         .requestRateLimiter(c -> c
-                                .setRateLimiter(redisRateLimiter())
+                                .setRateLimiter(redisRateLimiterGetResources())
                                 .setKeyResolver(userKeyResolver)
                                 .setDenyEmptyKey(true)
                                 .setStatusCode(HttpStatus.TOO_MANY_REQUESTS))
@@ -45,7 +63,7 @@ public class GatewayConfig {
                 .route("product-search-rate-limiter",p-> p.path("/api/products-service/products/search**")
                         .filters(f->f
                                 .requestRateLimiter(c -> c
-                                        .setRateLimiter(redisRateLimiter())
+                                        .setRateLimiter(redisRateLimiterGetResources())
                                         .setKeyResolver(userKeyResolver)
                                         .setDenyEmptyKey(true)
                                         .setStatusCode(HttpStatus.TOO_MANY_REQUESTS))
@@ -72,7 +90,7 @@ public class GatewayConfig {
                         .path("/api/users-service/auth/login")
                         .filters(f->f
                                 .requestRateLimiter(c -> c
-                                        .setRateLimiter(redisRateLimiter())
+                                        .setRateLimiter(redisRateLimiterLogin())
                                         .setKeyResolver(userKeyResolver)
                                         .setDenyEmptyKey(true)
                                         .setStatusCode(HttpStatus.TOO_MANY_REQUESTS))
@@ -84,7 +102,7 @@ public class GatewayConfig {
                 .route("register-rate-limiter",p-> p.path("/api/users-service/users/register")
                         .filters(f->f
                                 .requestRateLimiter(c -> c
-                                        .setRateLimiter(redisRateLimiter())
+                                        .setRateLimiter(redisRateLimiterRegistration())
                                         .setKeyResolver(userKeyResolver)
                                         .setDenyEmptyKey(true)
                                         .setStatusCode(HttpStatus.TOO_MANY_REQUESTS))

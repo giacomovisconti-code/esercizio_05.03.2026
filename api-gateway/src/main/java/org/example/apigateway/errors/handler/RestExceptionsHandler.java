@@ -1,6 +1,7 @@
 package org.example.apigateway.errors.handler;
 
 import org.example.apigateway.errors.FilterError;
+import org.example.apigateway.errors.RateLimitError;
 import org.example.apigateway.errors.TokenError;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,19 @@ public class RestExceptionsHandler extends ResponseEntityExceptionHandler {
         err.setStatus(((FilterError)e).getStatus());
         err.setCode(((FilterError)e).getCode());
         err.setMessage(((FilterError)e).getMessage());
+
+        return ResponseEntity.status(err.getStatus()).body(err);
+
+    }
+
+    @ExceptionHandler(RateLimitError.class)
+    public final ResponseEntity<ErrorRes> exceptionRateLimitHandler(Exception e){
+
+        ErrorRes err = new ErrorRes();
+
+        err.setStatus(((RateLimitError)e).getStatus());
+        err.setCode(((RateLimitError)e).getCode());
+        err.setMessage(((RateLimitError)e).getMessage());
 
         return ResponseEntity.status(err.getStatus()).body(err);
 
