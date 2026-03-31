@@ -101,6 +101,7 @@ services:
     depends_on:
       - eureka-server
       - config-server
+      - redis
     networks:
       - app-network
     env_file:

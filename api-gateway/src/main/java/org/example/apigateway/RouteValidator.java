@@ -18,12 +18,6 @@ public class RouteValidator {
             "/**/products/search**"
     );
 
-
-//        ,
-//        "/**/products/search**"
-
-
-
     public Predicate<ServerHttpRequest> isSecured =
             request -> openApiEndopoints
                     .stream()
