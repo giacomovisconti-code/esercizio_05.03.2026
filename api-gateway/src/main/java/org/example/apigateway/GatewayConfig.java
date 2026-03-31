@@ -26,7 +26,7 @@ public class GatewayConfig {
     // Rate Limiter per la rotta di Login
     @Bean
     public RedisRateLimiter redisRateLimiterLogin(){
-        return new RedisRateLimiter(10,2,1);
+        return new RedisRateLimiter(10,10,1);
     }
 
     // Rate Limiter per la registrazione
@@ -39,7 +39,7 @@ public class GatewayConfig {
     @Bean
     @Primary
     public RedisRateLimiter redisRateLimiterGetResources(){
-        return new RedisRateLimiter(60,40,1);
+        return new RedisRateLimiter(40,40,1);
     }
 
 
