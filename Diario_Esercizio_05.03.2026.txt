@@ -76,6 +76,16 @@ GIORNO 13
 
 GIORNO 14
 - Test custom exceptions
+- paginazione risultati
+
+GIORNO 15 (30/03 - malattia dal 24 al 27)
+- Cache di products e inventory
+- rate limit
+
+GIORNO 16
+- rate limit test 
+- problema n+1 risolto
+
 
 
 
