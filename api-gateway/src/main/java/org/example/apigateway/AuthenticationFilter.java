@@ -85,6 +85,11 @@ public class AuthenticationFilter implements GatewayFilter {
                 // INVENTORY
                 Mono<Void> inventoryMono = inventoryFilters(role, path, method, exchange);
                 if (!inventoryMono.equals(Mono.empty())) return inventoryMono;
+
+                // NOTIFICATION
+                Mono<Void> notificationMono = notificationFilters(role, path);
+                if (!notificationMono.equals(Mono.empty())) return notificationMono;
+
             } catch (TokenError | FilterError e){
                 throw e;
             } catch (Exception e) {
@@ -173,5 +178,12 @@ public class AuthenticationFilter implements GatewayFilter {
             throw new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
         }
         return Mono.empty();
+    }
+
+    private Mono<Void> notificationFilters(String role, String path) throws FilterError {
+        if (pathMatcher.match("/notification**", path) && !role.equals("ROLE_ADMIN")){
+            throw  new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
+        }
+        return  Mono.empty();
     }
 }

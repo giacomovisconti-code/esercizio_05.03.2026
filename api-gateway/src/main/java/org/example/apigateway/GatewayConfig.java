@@ -120,8 +120,6 @@ public class GatewayConfig {
                                 .filter(filter)
                         )
                         .uri("lb://INVENTORY-SERVICE"))
-                .route(p-> p.path("/api/notification-service/**")
-                        .uri("lb://NOTIFICATION-SERVICE"))
 
                 //* ORDER SERVICE
                 .route(p-> p.path("/api/orders-service/**")
@@ -130,6 +128,15 @@ public class GatewayConfig {
                                 .filter(filter)
                         )
                         .uri("lb://ORDER-SERVICE"))
+
+                //* NOTIFICATION SERVICE
+                .route(p-> p.path("/api/notification-service/**")
+                        .filters(f->f
+                                .stripPrefix(2)
+                                .filter(filter)
+                        )
+                        .uri("lb://NOTIFICATION-SERVICE"))
+
                 .build();
     }
 
