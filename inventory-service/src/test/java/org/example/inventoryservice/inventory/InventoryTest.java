@@ -1,7 +1,9 @@
 package org.example.inventoryservice.inventory;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redis.testcontainers.RedisContainer;
 import org.example.inventoryservice.dto.StockRequest;
 import org.example.inventoryservice.entities.Inventory;
 import org.example.inventoryservice.repositories.InventoryRepository;
@@ -11,6 +13,8 @@ import org.springframework.boot.context.properties.bind.validation.BindValidatio
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -55,6 +59,11 @@ public class InventoryTest {
             .withPassword("mysql")
             .withNetwork(network);
 
+    @Container
+    static RedisContainer redisContainer = new RedisContainer(DockerImageName.parse("redis:8.6.2-alpine"))
+            .withExposedPorts(6379)
+            .withNetwork(network);
+
     @DynamicPropertySource
     static void configureMysqlProp(DynamicPropertyRegistry registry){
         registry.add("spring.datasource.url", mySQLContainer::getJdbcUrl);
@@ -64,6 +73,12 @@ public class InventoryTest {
         //JPA-HIBERNATE
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
         registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.MySQLDialect");
+    }
+
+    @DynamicPropertySource
+    static void configureRedisProp(DynamicPropertyRegistry registry){
+        registry.add("spring.data.redis.port", ()-> redisContainer.getMappedPort(6379));
+        registry.add("spring.data.redis.host", redisContainer::getHost);
     }
 
     private static UUID sku = UUID.randomUUID();
@@ -96,10 +111,11 @@ public class InventoryTest {
                 .andExpect(status().isOk())
                 .andReturn();
         String res = result.getResponse().getContentAsString();
+        JsonNode json = objectMapper.readTree(res);
 
-        List<StockRequest> ls = objectMapper.readValue(res, new TypeReference<>(){});
-        System.out.println(ls);
-        assertEquals(1, ls.size());
+     long total = json.get("totalElements").asLong();
+        System.out.println(json);
+        assertEquals(1, total);
 
     }
 
@@ -122,10 +138,10 @@ public class InventoryTest {
     @Order(5)
     void updateStockShouldChange() throws Exception {
         String json = """
-                {
-                "productId":"%s",
-                "quantity": 5
-                }
+                    {
+                        "sku":"%s",
+                        "quantity": 5
+                    }
                 """.formatted(sku);
 
         MvcResult result = mockMvc.perform(
@@ -147,9 +163,19 @@ public class InventoryTest {
     @Order(6)
     void deductStockQuantityShouldChange() throws Exception {
         // test dell'endpoint gestito da OpenFeign
+
+        String json = """
+                [
+                    {
+                        "sku":"%s",
+                        "quantity": 3
+                    }
+                ]
+                """.formatted(sku);
         MvcResult result = mockMvc.perform(
-                patch("/inventory/deduction/{productId}", sku)
-                        .queryParam("quantity", "3"))
+                put("/inventory/deduction")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
                 .andExpect(status().isOk())
                 .andReturn();
         String res = result.getResponse().getContentAsString();
@@ -166,9 +192,19 @@ public class InventoryTest {
     @Order(7)
     void addStockQuantityShouldChange() throws Exception {
         // test dell'endpoint gestito da OpenFeign
+        String json = """
+                [
+                    {
+                        "sku":"%s",
+                        "quantity": 3
+                    }
+                ]
+                """.formatted(sku);
+
         MvcResult result = mockMvc.perform(
-                        patch("/inventory/addition/{productId}", sku)
-                                .queryParam("quantity", "3"))
+                        put("/inventory/addition")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(json))
                 .andExpect(status().isOk())
                 .andReturn();
         String res = result.getResponse().getContentAsString();
