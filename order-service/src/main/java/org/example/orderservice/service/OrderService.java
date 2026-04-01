@@ -127,11 +127,11 @@ public class OrderService {
         inventoryClient.additionStock(l);
     }
 
-    private OrderException fallBackProduct(Exception e) {
-        return new OrderException(Errors.PRODUCT_SERVICE_DOWN.key(), Errors.PRODUCT_SERVICE_DOWN.message());
+    private void fallBackProduct() {
+        throw  new OrderException(Errors.PRODUCT_SERVICE_DOWN.key(), Errors.PRODUCT_SERVICE_DOWN.message());
     }
-    private OrderException fallBackInventory(Exception e) {
-        return new OrderException(Errors.INVENTORY_SERVICE_DOWN.key(), Errors.INVENTORY_SERVICE_DOWN.message());
+    private void fallBackInventory() {
+        throw  new OrderException(Errors.INVENTORY_SERVICE_DOWN.key(), Errors.INVENTORY_SERVICE_DOWN.message());
     }
 
     // Verifico l'esistenza e la disponibilità del prodotto

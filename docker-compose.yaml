@@ -127,6 +127,9 @@ services:
   product-service:
      image: product-service:latest
      container_name: product-service
+     build:
+       context: ./product-service
+       dockerfile: Dockerfile
      ports:
        - "8084:8084"
      depends_on:

@@ -18,4 +18,4 @@ CREATE DATABASE IF NOT EXISTS esercizio_inventory;
        CREATE USER 'inventoryservice_user'@'%' IDENTIFIED BY 'inventory_pass';
         GRANT ALL PRIVILEGES ON esercizio_inventory.* TO 'inventoryservice_user'@'%';
 
-FLUSH PRIVILEGES
+FLUSH PRIVILEGES;
