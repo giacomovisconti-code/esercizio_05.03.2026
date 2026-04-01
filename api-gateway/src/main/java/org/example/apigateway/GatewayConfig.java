@@ -43,10 +43,10 @@ public class GatewayConfig {
     }
 
 
-    //* Product Service
     @Bean
-    public RouteLocator rateLimitGetAllProducts(RouteLocatorBuilder builder){
+    public RouteLocator routes(RouteLocatorBuilder builder){
         return builder.routes()
+                //* Product Service
                 // Rate Limiter per lista prodotti (rotta aperta)
                 .route("products-rate-limiter",p-> p.path("/api/products-service/products/all")
                 .filters(f->f
@@ -78,13 +78,8 @@ public class GatewayConfig {
                                 .filter(filter)
                         )
                         .uri("lb://PRODUCT-SERVICE"))
-                .build();
-    }
 
-    //* User Service
-    @Bean
-    public RouteLocator userService(RouteLocatorBuilder builder){
-        return builder.routes()
+                //* USER SERVICE
                 // Rate Limiter per Login utente
                 .route("login-rate-limiter", p-> p
                         .path("/api/users-service/auth/login")
@@ -117,36 +112,26 @@ public class GatewayConfig {
                                 .filter(filter)
                         )
                         .uri("lb://USER-SERVICE"))
+
+                //* INVENTORY SERVICE
+                .route(p-> p.path("/api/inventory-service/**")
+                        .filters(f->f
+                                .stripPrefix(2)
+                                .filter(filter)
+                        )
+                        .uri("lb://INVENTORY-SERVICE"))
+                .route(p-> p.path("/api/notification-service/**")
+                        .uri("lb://NOTIFICATION-SERVICE"))
+
+                //* ORDER SERVICE
+                .route(p-> p.path("/api/orders-service/**")
+                        .filters(f->f
+                                .stripPrefix(2)
+                                .filter(filter)
+                        )
+                        .uri("lb://ORDER-SERVICE"))
                 .build();
     }
 
-    //* Inventory Service
-    @Bean
-    public RouteLocator inventoryService(RouteLocatorBuilder builder){
-        return builder.routes().route(p-> p.path("/api/inventory-service/**")
-                .filters(f->f
-                        .stripPrefix(2)
-                        .filter(filter)
-                )
-                .uri("lb://INVENTORY-SERVICE")).build();
-    }
-
-    //* Notification Service
-    @Bean
-    public RouteLocator notificationsService(RouteLocatorBuilder builder){
-        return builder.routes().route(p-> p.path("/api/notification-service/**")
-                .uri("lb://NOTIFICATION-SERVICE")).build();
-    }
-
-    //* Order Service
-    @Bean
-    public RouteLocator ordersService(RouteLocatorBuilder builder){
-        return builder.routes().route(p-> p.path("/api/orders-service/**")
-                .filters(f->f
-                        .stripPrefix(2)
-                        .filter(filter)
-                )
-                .uri("lb://ORDER-SERVICE")).build();
-    }
 
 }
