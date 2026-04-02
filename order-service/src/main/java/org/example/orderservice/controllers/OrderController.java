@@ -6,10 +6,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.ws.rs.QueryParam;
 import org.example.orderservice.dto.order.ItemToOrder;
 import org.example.orderservice.entities.Order;
-import org.example.orderservice.enums.OrderStatus;
 import org.example.orderservice.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -37,20 +35,20 @@ public class OrderController {
 
     //? SHOW
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrderById(@NotNull @PathVariable("id") UUID id, @RequestHeader("X-User-Id") UUID userId, @RequestHeader("role") String role) throws Exception {
+    public ResponseEntity<Order> getOrderById(@NotNull @PathVariable("id") UUID id, @RequestHeader("X-User-Id") UUID userId, @RequestHeader("role") String role) {
         return ResponseEntity.ok(orderService.getSingleOrderById(id, userId, role));
     }
 
     //? CREATE
     @PostMapping("/create")
-    public ResponseEntity<Order> createOrder(@RequestBody List<@Valid ItemToOrder> itemList, @RequestHeader("X-User-Id") UUID userId) throws Exception {
+    public ResponseEntity<Order> createOrder(@RequestBody List<@Valid ItemToOrder> itemList, @RequestHeader("X-User-Id") UUID userId) {
         Order o = orderService.createOrder(itemList, userId);
         return ResponseEntity.ok(o);
     }
 
     //? UPDATE
     @PatchMapping("/update/{orderId}")
-    public ResponseEntity<Order> updateOrder(@NotNull @PathVariable("orderId") UUID orderId, @RequestBody List<@Valid ItemToOrder> itemList) throws Exception {
+    public ResponseEntity<Order> updateOrder(@NotNull @PathVariable("orderId") UUID orderId, @RequestBody List<@Valid ItemToOrder> itemList) {
         Order o = orderService.updateOrder(orderId, itemList);
         return ResponseEntity.ok(o);
 
@@ -65,20 +63,20 @@ public class OrderController {
 
     //? DEACTIVE ORDER
     @PatchMapping("/deactivate/{orderId}")
-    public ResponseEntity<Order> deactivateOrder(@NotNull @PathVariable("orderId") UUID orderId) throws Exception {
+    public ResponseEntity<Order> deactivateOrder(@NotNull @PathVariable("orderId") UUID orderId) {
         Order o = orderService.deactiveOrder(orderId);
         return ResponseEntity.ok(o);
     }
     //? REACTIVE ORDER
     @PatchMapping("/reactivate/{orderId}")
-    public ResponseEntity<Order> reactivateOrder(@NotNull @PathVariable("orderId") UUID orderId) throws Exception {
+    public ResponseEntity<Order> reactivateOrder(@NotNull @PathVariable("orderId") UUID orderId) {
         Order o = orderService.reactivateOrder(orderId);
         return ResponseEntity.ok(o);
     }
 
     //? SOFT DELETE ORDER
     @PatchMapping("/delete/{orderId}")
-    public ResponseEntity<String> deleteOrder(@NotNull @PathVariable("orderId") UUID orderId) throws Exception {
+    public ResponseEntity<String> deleteOrder(@NotNull @PathVariable("orderId") UUID orderId) {
         orderService.deleteOrder(orderId);
         return ResponseEntity.ok("Ordine eliminato con successo");
     }

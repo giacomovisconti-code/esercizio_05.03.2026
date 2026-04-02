@@ -12,5 +12,5 @@ import java.util.UUID;
 public interface ProductClient {
 
     @GetMapping("/products/{sku}")
-    public ResponseEntity<ProductDto> getProduct(@PathVariable("sku") UUID sku);
+    ResponseEntity<ProductDto> getProduct(@PathVariable("sku") UUID sku);
 }

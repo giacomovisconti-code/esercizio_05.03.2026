@@ -1,7 +1,6 @@
 package org.example.orderservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.transaction.Transactional;
 import org.example.orderservice.dto.StockChange;
@@ -24,16 +23,12 @@ import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -66,7 +61,7 @@ public class OrderService {
     //? UTILS
     // Circuit Breaker per product validation
     @CircuitBreaker(name = "validation", fallbackMethod = "fallBackProduct")
-    private ProductDto productValidation(ItemToOrder itemToOrder) throws Exception {
+    private ProductDto productValidation(ItemToOrder itemToOrder) {
 
         Cache cache = cacheManager.getCache("product");
         System.out.println(cache);
@@ -79,13 +74,13 @@ public class OrderService {
                 return p;
             }
         }
-        ProductDto p = productClient.getProduct(itemToOrder.getSku()).getBody();
-        return p;
+        return productClient.getProduct(itemToOrder.getSku()).getBody();
+
     }
 
     // Circuit Breaker per stock validation
     @CircuitBreaker(name = "validation", fallbackMethod = "fallBackInventory")
-    private void stockValidation(ItemToOrder itemToOrder) throws Exception {
+    private void stockValidation(ItemToOrder itemToOrder) {
 
         Cache cache = cacheManager.getCache("stock");
         System.out.println(cache);
@@ -98,6 +93,7 @@ public class OrderService {
             }
         }
         StockRequest stock = inventoryClient.getStock(itemToOrder.getSku()).getBody();
+        assert stock != null;
         if (stock.getQuantity() < itemToOrder.getQuantity()) throw new OrderException(Errors.STOCK_VALIDATION_NOT_ENOUGH.key(), Errors.STOCK_VALIDATION_NOT_ENOUGH.message());
 
     }
@@ -135,7 +131,7 @@ public class OrderService {
     }
 
     // Verifico l'esistenza e la disponibilità del prodotto
-    private List<OrderItemDraft> orderValidation(List<ItemToOrder> itemToOrder) throws Exception {
+    private List<OrderItemDraft> orderValidation(List<ItemToOrder> itemToOrder) {
 
         List<OrderItemDraft> orderDraftLs = new ArrayList<>();
 
@@ -186,7 +182,7 @@ public class OrderService {
 
     //! CREATE ORDER
     @Transactional
-    public Order createOrder(List<ItemToOrder> itemList, UUID userId) throws Exception {
+    public Order createOrder(List<ItemToOrder> itemList, UUID userId) {
 
         // Controllo che userID non sia null
         if (userId == null) throw new OrderException(Errors.USER_NOT_ALLOWED_FOR_ORDER.key(), Errors.USER_NOT_ALLOWED_FOR_ORDER.message());
@@ -228,7 +224,7 @@ public class OrderService {
     }
 
     //! UPDATE
-    public Order updateOrder(UUID orderId, List<ItemToOrder> itemList) throws Exception {
+    public Order updateOrder(UUID orderId, List<ItemToOrder> itemList) {
         // Trovo l'ordine
         Order order = orderRepository.findOrderById(orderId).orElseThrow(()-> new OrderException(Errors.ORDER_NOT_FOUND.key(), Errors.ORDER_NOT_FOUND.message()));
 

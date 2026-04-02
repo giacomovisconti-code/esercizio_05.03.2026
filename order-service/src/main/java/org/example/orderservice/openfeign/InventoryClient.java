@@ -5,7 +5,6 @@ import org.example.orderservice.dto.StockChange;
 import org.example.orderservice.dto.StockRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,11 +13,11 @@ import java.util.UUID;
 @FeignClient(name = "inventory-service")
 public interface InventoryClient {
     @GetMapping("/inventory/{productId}")
-    public ResponseEntity<StockRequest> getStock(@PathVariable("productId") UUID productId);
+    ResponseEntity<StockRequest> getStock(@PathVariable("productId") UUID productId);
 
     @PutMapping("/inventory/deduction")
-    public ResponseEntity<String> deductionStock(@Valid @RequestBody List<StockChange> list);
+    ResponseEntity<String> deductionStock(@Valid @RequestBody List<StockChange> list);
 
     @PutMapping("/inventory/addition")
-    public ResponseEntity<String> additionStock(@Valid @RequestBody List<StockChange> list);
+    ResponseEntity<String> additionStock(@Valid @RequestBody List<StockChange> list);
 }
