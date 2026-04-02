@@ -12,8 +12,8 @@ import java.util.UUID;
 public interface InventoryClient {
 
     @PostMapping("/inventory/create/{productId}")
-    public ResponseEntity<String> createStock(@PathVariable("productId") UUID productId);
+    ResponseEntity<String> createStock(@PathVariable("productId") UUID productId);
 
     @DeleteMapping("/inventory/delete/{productId}")
-    public ResponseEntity<String> deleteStock(@PathVariable("productId") UUID productId);
+    ResponseEntity<String> deleteStock(@PathVariable("productId") UUID productId);
 }

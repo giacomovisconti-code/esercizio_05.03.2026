@@ -1,6 +1,5 @@
 package org.example.productservice.dto;
 
-import jakarta.persistence.Lob;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;

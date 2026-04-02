@@ -94,7 +94,7 @@ public class OrderTest {
         registry.add("spring.datasource.username", mySQLContainer::getUsername);
         registry.add("spring.datasource.password", mySQLContainer::getPassword);
 
-        //JPA-HIBERNATE
+        // JPA-HIBERNATE
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
         registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.MySQLDialect");
 
@@ -110,6 +110,7 @@ public class OrderTest {
         registry.add("spring.kafka.consumer.key-deserializer", () -> "org.apache.kafka.common.serialization.StringDeserializer");
         registry.add("spring.kafka.consumer.value-deserializer", () -> "org.apache.kafka.common.serialization.StringDeserializer");
 
+        // REDIS CONFIG
         registry.add("spring.data.redis.port", ()-> redisContainer.getMappedPort(6379));
         registry.add("spring.data.redis.host", redisContainer::getHost);
     }

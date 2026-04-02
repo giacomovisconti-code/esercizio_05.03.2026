@@ -19,13 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Objects;
-import java.util.Optional;
-import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -40,7 +36,7 @@ public class ProductService {
     private InventoryClient inventoryClient;
 
 
-    private ModelMapper modelMapper = new ModelMapper();
+    private final ModelMapper modelMapper = new ModelMapper();
 
     //? UTILS
     // PRODOTTO: entità --> Dto
@@ -59,7 +55,7 @@ public class ProductService {
     }
 
     // METODO FALLBACK PER IL CIRCUIT BREAKER INVNTORY SERVICE
-    private void fallBack(Exception e) {
+    private void fallBack() {
         throw new ProductException(Errors.STOCK_NOT_CREATED.key(), Errors.STOCK_NOT_CREATED.message());
     }
 
@@ -145,10 +141,11 @@ public class ProductService {
     //! DELETE
     @Transactional
     public void deleteProduct(UUID sku){
-        Product p = productRepository.findBySku(sku).orElseThrow(() -> new ProductException(Errors.PRODUCT_NOT_FOUND.key(), Errors.PRODUCT_NOT_FOUND.message()));
+        productRepository.findBySku(sku).orElseThrow(() -> new ProductException(Errors.PRODUCT_NOT_FOUND.key(), Errors.PRODUCT_NOT_FOUND.message()));
 
         // Se presente lo elimino
         productRepository.deleteBySku(sku);
+
         //Elimino anche la giacenza
         inventoryClient.deleteStock(sku);
 

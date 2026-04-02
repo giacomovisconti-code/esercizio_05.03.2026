@@ -43,7 +43,7 @@ public class Product {
     @DecimalMin(value = "0.0", message = "Il prezzo deve essere positivo")
     private BigDecimal price;
 
-    @Column(nullable = true, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     @Size(max = 500, message = "Descrizion troppo lunga")
     private String description;
 
