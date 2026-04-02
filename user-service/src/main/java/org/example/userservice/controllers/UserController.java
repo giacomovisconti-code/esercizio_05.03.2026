@@ -9,17 +9,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import org.example.userservice.dto.RegisterRequest;
 import org.example.userservice.dto.UserResponse;
-import org.example.userservice.entities.User;
-import org.example.userservice.enums.Role;
-import org.example.userservice.repositories.UserRepository;
 import org.example.userservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -30,8 +25,6 @@ public class UserController {
     private UserService userService;
 
     @Autowired
-    private UserRepository userRepository;
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @GetMapping("/all")
     public ResponseEntity<Page<UserResponse>> getUsers(@Parameter(description = "Risultati per pagina", schema = @Schema(defaultValue = "9", minimum = "1"))

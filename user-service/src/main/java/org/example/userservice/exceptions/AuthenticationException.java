@@ -1,8 +1,10 @@
 package org.example.userservice.exceptions;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.http.HttpStatus;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class AuthenticationException extends RuntimeException {
     private final HttpStatus status = HttpStatus.BAD_REQUEST;

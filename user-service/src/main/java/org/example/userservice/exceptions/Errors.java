@@ -12,5 +12,5 @@ public enum Errors {
 
     public String key(){ return name(); }
 
-    public String message(){return message; }
+    public String message(){ return message; }
 }

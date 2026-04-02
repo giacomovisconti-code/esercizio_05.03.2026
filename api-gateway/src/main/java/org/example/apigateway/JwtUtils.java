@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
 
@@ -15,7 +14,7 @@ import java.util.Date;
 public class JwtUtils {
 
 
-    private Key key;
+    private final Key key;
 
     @Autowired
     public JwtUtils(

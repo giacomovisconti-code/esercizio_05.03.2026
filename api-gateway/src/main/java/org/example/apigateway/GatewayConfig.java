@@ -1,6 +1,5 @@
 package org.example.apigateway;
 
-import org.example.apigateway.rate_limit.RateLimiterConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;

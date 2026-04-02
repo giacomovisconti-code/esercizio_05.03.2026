@@ -7,18 +7,16 @@ import org.example.apigateway.errors.handler.Errors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.util.Objects;
 
 @Component
 public class AuthenticationFilter implements GatewayFilter {
@@ -46,7 +44,7 @@ public class AuthenticationFilter implements GatewayFilter {
                 throw new TokenError(Errors.NO_TOKEN.message(), Errors.NO_TOKEN.key());
             }
 
-            String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
+            String authHeader = Objects.requireNonNull(exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION)).get(0);
             if (!authHeader.startsWith("Bearer ") || authHeader.isBlank()) throw new TokenError(Errors.INVALID_TOKEN.message(), Errors.INVALID_TOKEN.key());
             String token = authHeader.substring(7);
 
@@ -71,19 +69,19 @@ public class AuthenticationFilter implements GatewayFilter {
                 exchange = exchange.mutate().request(mutatedReq).build();
 
                 // USERS
-                Mono<Void> userMono = usersFilters(role, path, method, exchange);
+                Mono<Void> userMono = usersFilters(role, path, method);
                 if (!userMono.equals(Mono.empty())) return userMono;
 
                 // PRODUCTS
-                Mono<Void> productMono = productsFilters(role, path, method, exchange);
+                Mono<Void> productMono = productsFilters(role, path, method);
                 if (!productMono.equals(Mono.empty())) return productMono;
 
                 // ORDERS
-                Mono<Void> orderMono = ordersFilters(role, path, method, exchange);
+                Mono<Void> orderMono = ordersFilters(role, path, method);
                 if (!orderMono.equals(Mono.empty())) return orderMono;
 
                 // INVENTORY
-                Mono<Void> inventoryMono = inventoryFilters(role, path, method, exchange);
+                Mono<Void> inventoryMono = inventoryFilters(role, path);
                 if (!inventoryMono.equals(Mono.empty())) return inventoryMono;
 
                 // NOTIFICATION
@@ -101,7 +99,7 @@ public class AuthenticationFilter implements GatewayFilter {
     }
 
 
-    private Mono<Void> usersFilters(String role, String path, HttpMethod method, ServerWebExchange exchange) throws FilterError {
+    private Mono<Void> usersFilters(String role, String path, HttpMethod method) throws FilterError {
 
         if (pathMatcher.match("/users/all", path) && method == HttpMethod.GET) {
             if (!role.equals("ROLE_ADMIN")) {
@@ -118,7 +116,7 @@ public class AuthenticationFilter implements GatewayFilter {
        return Mono.empty() ;
     }
 
-    private Mono<Void> productsFilters(String role, String path, HttpMethod method, ServerWebExchange exchange) throws FilterError  {
+    private Mono<Void> productsFilters(String role, String path, HttpMethod method) throws FilterError  {
         if (pathMatcher.match("/products/create", path) &&
                 method == HttpMethod.POST) {
             if (!role.equals("ROLE_ADMIN")) {
@@ -145,7 +143,7 @@ public class AuthenticationFilter implements GatewayFilter {
 
     }
 
-    private Mono<Void> ordersFilters(String role, String path, HttpMethod method, ServerWebExchange exchange) throws FilterError  {
+    private Mono<Void> ordersFilters(String role, String path, HttpMethod method) throws FilterError  {
 
         if ((pathMatcher.match("/orders/changestatus/*", path) ||
                 pathMatcher.match("/orders/deactivate/*", path) ||
@@ -173,7 +171,7 @@ public class AuthenticationFilter implements GatewayFilter {
         return Mono.empty();
 
     }
-    private Mono<Void> inventoryFilters(String role, String path, HttpMethod method, ServerWebExchange exchange) throws FilterError  {
+    private Mono<Void> inventoryFilters(String role, String path) throws FilterError  {
         if (pathMatcher.match("/inventory/**", path) && !role.equals("ROLE_ADMIN")) {
             throw new FilterError(Errors.UNAUTHORIZED.message(), Errors.UNAUTHORIZED.key());
         }

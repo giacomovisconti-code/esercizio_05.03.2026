@@ -3,13 +3,11 @@ package org.example.userservice.service;
 import org.apache.tomcat.websocket.AuthenticationException;
 import org.example.userservice.dto.LoginRequest;
 import org.example.userservice.dto.LoginResponse;
-import org.example.userservice.dto.UserResponse;
 import org.example.userservice.entities.User;
 import org.example.userservice.exceptions.Errors;
 import org.example.userservice.jwt.JwtUtils;
 import org.example.userservice.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +23,7 @@ public class AuthenticationService {
     @Autowired
     private JwtUtils jwtUtils;
 
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public LoginResponse login(LoginRequest loginRequest) throws AuthenticationException {
         Optional<User> uOpt = userRepository.findUserByUsername(loginRequest.getUsername());
