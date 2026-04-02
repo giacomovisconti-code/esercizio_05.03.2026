@@ -2,6 +2,9 @@ package org.example.orderservice.kafka;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -14,11 +17,13 @@ import java.util.Map;
 @Configuration
 public class KafkaProducerConfig {
 
+    @Autowired
+    private KafkaProperties kafkaProperties;
+
     @Bean
     public ProducerFactory<String, String> producerFactory(){
-        Map<String, Object> config = new HashMap<>();
+        Map<String, Object> config = new HashMap<>(kafkaProperties.buildProducerProperties(null));
 
-        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9092");
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG,true);

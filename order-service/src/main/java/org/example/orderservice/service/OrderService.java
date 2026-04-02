@@ -186,7 +186,7 @@ public class OrderService {
 
     //! CREATE ORDER
     @Transactional
-    public void createOrder(List<ItemToOrder> itemList, UUID userId) throws Exception {
+    public Order createOrder(List<ItemToOrder> itemList, UUID userId) throws Exception {
 
         // Controllo che userID non sia null
         if (userId == null) throw new OrderException(Errors.USER_NOT_ALLOWED_FOR_ORDER.key(), Errors.USER_NOT_ALLOWED_FOR_ORDER.message());
@@ -224,10 +224,11 @@ public class OrderService {
         stockReduction(items);
 
         kafkaProducer.sendMessage(MESSAGE.formatted(order.getUserId(), order.getId()));
+        return order;
     }
 
     //! UPDATE
-    public void updateOrder(UUID orderId, List<ItemToOrder> itemList) throws Exception {
+    public Order updateOrder(UUID orderId, List<ItemToOrder> itemList) throws Exception {
         // Trovo l'ordine
         Order order = orderRepository.findOrderById(orderId).orElseThrow(()-> new OrderException(Errors.ORDER_NOT_FOUND.key(), Errors.ORDER_NOT_FOUND.message()));
 
@@ -265,10 +266,11 @@ public class OrderService {
         order.setTotal(total);
         orderRepository.save(order);
         stockReduction(items);
+        return order;
     }
 
     //! CHANGE ORDER STATUS
-    public void changeOrderStatus(UUID orderId, String status){
+    public Order changeOrderStatus(UUID orderId, String status){
         Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new OrderException(Errors.ORDER_NOT_FOUND.key(), Errors.ORDER_NOT_FOUND.message()));
 
         // Controllo se l'ordine è disattivato o eliminato
@@ -285,24 +287,27 @@ public class OrderService {
             throw new OrderException(Errors.ORDER_STATUS_INCOMPATIBLE.key(), Errors.ORDER_STATUS_INCOMPATIBLE.message());
         }
         orderRepository.save(order);
+        return order;
     }
 
     //!DeActive
     // Disattivazione ordine
-    public void deactiveOrder(UUID orderId) {
+    public Order deactiveOrder(UUID orderId) {
         Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new OrderException(Errors.ORDER_NOT_FOUND.key(),Errors.ORDER_NOT_FOUND.message()));
         order.setActive(false);
         orderRepository.save(order);
+        return order;
     }
 
     //! ReActive
     // Riattivazione ordine
-    public void reactivateOrder(UUID orderId) {
+    public Order reactivateOrder(UUID orderId) {
 
         Order order = orderRepository.findOrderById(orderId).orElseThrow(() -> new OrderException(Errors.ORDER_NOT_FOUND.key(), Errors.ORDER_NOT_FOUND.message()));
         if (order.getDeleted()) throw new OrderException(Errors.ORDER_ELIMINATED.key(), Errors.ORDER_ELIMINATED.message());
         order.setActive(true);
         orderRepository.save(order);
+        return order;
     }
 
     //! DELETE

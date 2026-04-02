@@ -32,7 +32,7 @@ public class Order {
     private UUID userId;
 
     @Digits(integer = 6, fraction = 2, message = "Non valido (max 6 cifre intere e 2 decimali)")
-    @DecimalMin(value = "0.0", message = "Il totale deve essere positivo")
+    @DecimalMin(value = "0.00", message = "Il totale deve essere positivo")
     private BigDecimal total;
 
     @Enumerated(EnumType.STRING)

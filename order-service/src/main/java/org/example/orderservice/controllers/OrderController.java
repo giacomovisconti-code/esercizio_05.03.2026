@@ -43,37 +43,37 @@ public class OrderController {
 
     //? CREATE
     @PostMapping("/create")
-    public ResponseEntity<String> createOrder(@RequestBody List<@Valid ItemToOrder> itemList, @RequestHeader("X-User-Id") UUID userId) throws Exception {
-        orderService.createOrder(itemList, userId);
-        return ResponseEntity.ok("Ordine creato con successo!");
+    public ResponseEntity<Order> createOrder(@RequestBody List<@Valid ItemToOrder> itemList, @RequestHeader("X-User-Id") UUID userId) throws Exception {
+        Order o = orderService.createOrder(itemList, userId);
+        return ResponseEntity.ok(o);
     }
 
     //? UPDATE
     @PatchMapping("/update/{orderId}")
-    public ResponseEntity<String> updateOrder(@NotNull @PathVariable("orderId") UUID orderId, @RequestBody List<@Valid ItemToOrder> itemList) throws Exception {
-        orderService.updateOrder(orderId, itemList);
-        return ResponseEntity.ok("Ordine modificato con successo");
+    public ResponseEntity<Order> updateOrder(@NotNull @PathVariable("orderId") UUID orderId, @RequestBody List<@Valid ItemToOrder> itemList) throws Exception {
+        Order o = orderService.updateOrder(orderId, itemList);
+        return ResponseEntity.ok(o);
 
     }
 
     //? CHANGE ORDER STATUS
     @PatchMapping("/changestatus/{orderId}")
-    public ResponseEntity<String> changeStatusOrder(@NotNull @PathVariable("orderId") UUID orderId, @RequestParam("status") String status){
-        orderService.changeOrderStatus(orderId, status);
-        return ResponseEntity.ok("Stato ordine modificato con successo");
+    public ResponseEntity<Order> changeStatusOrder(@NotNull @PathVariable("orderId") UUID orderId, @RequestParam("status") String status){
+        Order o = orderService.changeOrderStatus(orderId, status);
+        return ResponseEntity.ok(o);
     }
 
     //? DEACTIVE ORDER
     @PatchMapping("/deactivate/{orderId}")
-    public ResponseEntity<String> deactivateOrder(@NotNull @PathVariable("orderId") UUID orderId) throws Exception {
-        orderService.deactiveOrder(orderId);
-        return ResponseEntity.ok("Ordine Disattivato con successo!");
+    public ResponseEntity<Order> deactivateOrder(@NotNull @PathVariable("orderId") UUID orderId) throws Exception {
+        Order o = orderService.deactiveOrder(orderId);
+        return ResponseEntity.ok(o);
     }
     //? REACTIVE ORDER
     @PatchMapping("/reactivate/{orderId}")
-    public ResponseEntity<String> reactivateOrder(@NotNull @PathVariable("orderId") UUID orderId) throws Exception {
-        orderService.reactivateOrder(orderId);
-        return ResponseEntity.ok("Ordine Riattivato con successo!");
+    public ResponseEntity<Order> reactivateOrder(@NotNull @PathVariable("orderId") UUID orderId) throws Exception {
+        Order o = orderService.reactivateOrder(orderId);
+        return ResponseEntity.ok(o);
     }
 
     //? SOFT DELETE ORDER
