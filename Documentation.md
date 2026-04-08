@@ -276,6 +276,13 @@ La paginazione è così composta:
 - `PATCH /orders/delete/{orderId}`
     - request static param: orderId, UUID
     -  response: stringa
+
+### Notification Service (`/api/notification-service`)
+- `GET /notification/`
+    - response: { id, messageText, sendedAt }
+- `GET /notification/{orderId}
+    - request static param: orderId, UUID
+    - response: { id, messageText, sendedAt }
 ---
 
 ### Actuator
@@ -341,6 +348,8 @@ Ogni microservizio espone endpoint Actuator (almeno health), ad esempio:
       "username":"admin1",
       "password":"Password1-"
     }
+Per inizializzare il primo utente con ruolo admin, entrare nel DBMS e cambiare il ruolo da ROLE_USER in ROLE_ADMIN
+
 
 ## Acceptance Checklist
 
