@@ -1,74 +1,91 @@
 # Microservices Dependecies:
 ## Config Server
-    - Spring Web
-    
-    - Config Server
-    
-    - Actuator
-    
-    - Eureka Client
+- Spring Web
+- Spring Cloud Config Server
+- Actuator
+- Spring Cloud Netflix Eureka Client
+- **Version**: Spring Boot 3.4.3
 
 ## Eureka Server
-    - Eureka Server
-    - Actuator
-    - API Gateway
+- Spring Cloud Netflix Eureka Server
+- Actuator
+- **Version**: Spring Boot 3.4.3
 
-## Spring Cloud Gateway
-    - Eureka Discovery Client
-    - Actuator
-    - Security
+## API Gateway (Spring Cloud Gateway)
+- Spring Cloud Gateway (WebFlux)
+- Spring Cloud Netflix Eureka Discovery Client
+- Actuator
+- Spring Security
+- **Redis Reactive** (for rate limiting & caching)
+- **JWT (JJWT)** for token validation
+- **Resilience4J** (circuit breaker support)
+- **Version**: Spring Boot 3.4.5
 
 ## User Service
-    - Spring Web
-    - Spring Data JPA
-    - Spring Security
-    - MySQL Driver
-    -Actuator
-    - Eureka Client
-    - OpenAPI
+- Spring Web
+- Spring Data JPA
+- Spring Security
+- MySQL Connector/J
+- Actuator
+- Spring Cloud Netflix Eureka Client
+- Spring Cloud Config Client
+- SpringDoc OpenAPI (Swagger UI)
+- Lombok
+- **Version**: Spring Boot 3.4.3
 
 ## Product Service
-    - Spring Web
-    - Spring Data JPA
-    - Database driver
-    - Actuator
-    - Eureka Client
-    - OpenAPI
+- Spring Web
+- Spring Data JPA
+- MySQL Connector/J
+- Actuator
+- Spring Cloud Netflix Eureka Client
+- Spring Cloud Config Client
+- SpringDoc OpenAPI (Swagger UI)
+- **Redis** (caching for products by SKU)
+- Spring Cloud Resilience4J (circuit breaker)
+- Lombok
+- **Version**: Spring Boot 3.4.3
 
 ## Inventory Service
-    - Spring Web
-
-    - Spring Data JPA
-
-    - Database driver
-
-    - Actuator
-
-    - Eureka Client
-
-    - OpenAPI
+- Spring Web
+- Spring Data JPA
+- MySQL Connector/J
+- Actuator
+- Spring Cloud Netflix Eureka Client
+- Spring Cloud Config Client
+- SpringDoc OpenAPI (Swagger UI)
+- **Redis** (caching for inventory by productId)
+- Spring Cloud Resilience4J (circuit breaker)
+- Lombok
+- **Version**: Spring Boot 3.4.3
 
 ## Order Service
-    - Spring Web
-
-    - Spring Data JPA
-
-    - OpenFeign 
-
-    - Resilience4J
-
-    - Kafka
-
-    - Actuator
-
-    - Eureka Client
-
-    - OpenAPI
+- Spring Web
+- Spring Data JPA
+- MySQL Connector/J
+- Spring Cloud OpenFeign (service-to-service calls)
+- Spring Cloud Resilience4J (circuit breaker for remote calls)
+- Spring Kafka (Kafka Producer)
+- Actuator
+- Spring Cloud Netflix Eureka Client
+- Spring Cloud Config Client
+- SpringDoc OpenAPI (Swagger UI)
+- **Redis** (caching)
+- Lombok
+- **Version**: Spring Boot 3.4.3
 
 ## Notification Service
-    - Spring Kafka
-    - Actuator
-    - Eureka Client
+- Spring Kafka (Kafka Consumer)
+- Actuator
+- Spring Cloud Netflix Eureka Client
+- Spring Cloud Config Client
+- Spring Data JPA
+- MySQL Connector/J
+- **Liquibase** (database migration management)
+- Lombok
+- **Version**: Spring Boot 3.4.3
+
+# 📡 Server Ports & Network
 
 # Servers Ports:
 - api-gateway: 8080
@@ -97,14 +114,28 @@
 - Docker
 - MySQL
 
+### Creare un file secret.env con
+# JWT Configuration
+JWT_SECRET
+JWT_EXPIRATION_MS
+
+# MySQL Root User
+MYSQL_ROOT_PASSWORD
+
+# Database Users & Passwords
+# IMPORTANTE: Questi valori DEVONO corrispondere a quelli nel file: mysql-init/01-init-db.sql
+USERS_DB_PASS
+ORDERS_DB_PASS
+PRODUCTS_DB_PASS
+NOTIFICATION_DB_PASS
+INVENTORY_DB_PASS
+
+
 ## Avvio Progetto
 
 ### 1. Build JAR dei microservizi
 Dalla root progetto:
-
 ```bash
-cd /home/giacomo/Scrivania/esercizio/esercizio_05.03.2026
-
 cd config-server && ./mvnw clean package -DskipTests && cd ..
 cd eureka-server && ./mvnw clean package -DskipTests && cd ..
 cd api-gateway && ./mvnw clean package -DskipTests && cd ..
@@ -135,6 +166,11 @@ docker compose up -d
 # Endpoints
 
 Tutti gli endpoint applicativi sono esposti tramite API Gateway (`http://localhost:8080`) con prefisso `/api/{service-name}`.
+Molti di questi (le Index) ritornano liste paginate di records. L'endopoint accetta query params: page, pageSize:
+- page: quante pagine di records voglio,
+- pageSize: quanti records per pagina riceverò.
+La paginazione è così composta: 
+- { content: [ ], pageable: { pageNumber, pageSize, sort, offset, paged, unpaged }, last, totalPages, totalElements, first, size, number, sort, numberOfElements, empty }
 
 ### Gateway Routing
 
@@ -142,8 +178,10 @@ Tutti gli endpoint applicativi sono esposti tramite API Gateway (`http://localho
 - `PRODUCT-SERVICE` -> `/api/products-service/**`
 - `INVENTORY-SERVICE` -> `/api/inventory-service/**`
 - `ORDER-SERVICE` -> `/api/orders-service/**`
-
+- `NOTIFICATION-SERVICE` -> `/api/notification-service/**`
 ---
+
+
 
 ### User Service (`/api/users-service`)
 
@@ -154,50 +192,90 @@ Tutti gli endpoint applicativi sono esposti tramite API Gateway (`http://localho
 
 #### Users
 - `GET /users/all` (admin only)
+    - request: query params ( page, pageSize ) non obbligatori
+    - response: { userId, username, role, created_at }, paginato
 - `POST /users/register` (public)
     - request body: { username, password }
-
+    - response: stringa
+- `PATCH /users/giveAdmin/{userId}`
+    - request static params: userId, UUID
+    - response: stringa
 ---
 
 ### Product Service (`/api/products-service`)
 
 - `GET /products/all` (public)
+    - request: query params ( page, pageSize ) non obbligatori
+    - response: { id, sku, name, description, price }, paginato
 - `GET /products/{sku}` (public)
+    - request static params: { id, sku, name, description, price } dato cachiato su redis
 - `GET /products/search?name={name}` (public)
+    - request: query params ( page, pageSize ) non obbligatori
+    - response: { id, sku, name, description, price }, paginato
 - `POST /products/create` (admin only)
     - request body: { sku, name, price, description }
+    - response: stringa
 - `PATCH /products/update` (admin only)
     - request body: { sku, name, price, description }
+    - response: stringa
 - `DELETE /products/delete/{sku}` (admin only)
+    - request static params: sku, UUID
+    - response: stringa
 
 ---
 ### Inventory Service (`/api/inventory-service`)
 
 - `GET /inventory` (admin only)
-- `GET /inventory/{productId}` (admin only)
-- `POST /inventory/create/{productId}` (admin only) auto-crea voce inventario con quantity=0 per nuovo prodotto
-- `PATCH /inventory/deduction/{productId}?quantity={qty}` auto-deduce quantità (es. dopo ordine) con controllo che quantity non diventi negativa
-- `PATCH /inventory/addition/{sku}?quantity={qty}` auto-aumenta quantità (es. dopo modifica ordine)
+    - request: query params ( page, pageSize ) non obbligatori
+    - response: { id, sku, name, description, price }, paginato
+- `GET /inventory/{productId}` (admin only) dato cachiato su redis
+    - request static param: productId, UUID
+    - response: { sku, quantity, updatedAt }
+- `POST /inventory/create/{productId}` (admin only) auto-crea voce inventario con quantity=0 alla creazione del nuovo prodotto
+- `PATCH /inventory/deduction` auto-deduce quantità (es. dopo ordine) con controllo che quantity non diventi negativa
+    - request body:  [ { sku, quantity } ]
+    - response: stringa
+- `PATCH /inventory/addition` auto-aumenta quantità (es. dopo modifica ordine)
+    - request body:  [ { sku, quantity } ]
+    - response: stringa
 - `PATCH /inventory/update` (admin only)
     - request body: { sku, quantity }
+    - response: stringa 
 - `DELETE /inventory/delete/{productId}` (admin only)
+    - request static param: productId, UUID
+    - response: stringa
 
 ---
 
 ### Order Service (`/api/orders-service`)
 
 - `GET /orders` (admin only)
-- `GET /orders/{id}` (admin only o user se è suo ordine)
+    - request: query params ( page, pageSize ) non obbligatori
+    - response: { id, userId, total, orderStatus, createdAt, orderItems [ ], active, deleted }, paginato
+- `GET /orders/{id}` (admin only o user creatore dell'ordine)
+    - request static params id, UUID
+    - response: { id, userId, total, orderStatus, createdAt, orderItems [ ], active, deleted }
 - `POST /orders/create`  (user autenticato)
     - request body: { [{ sku, quantity }] }
+    - response: { id, userId, total, orderStatus, createdAt, orderItems [ ], active, deleted }
   Richiede header interno `X-User-Id` (propagato dal Gateway dopo validazione JWT)
 - `PATCH /orders/update/{orderId}`
     - request body: { [{ sku, quantity }] }
+    - request static params: id, UUID
+    - response: { id, userId, total, orderStatus, createdAt, orderItems [ ], active, deleted }
 - `PATCH /orders/changestatus/{orderId}?status={status}` (admin only)
+    - request static param: orderId, UUID
+    - request query param: status, stringa
+    - response: { id, userId, total, orderStatus, createdAt, orderItems [ ], active, deleted }
 - `PATCH /orders/deactivate/{orderId}` (soft delete, admin only)
+    - request static param: orderId, UUID
+    - response: { id, userId, total, orderStatus, createdAt, orderItems [ ], active, deleted }
 - `PATCH /orders/reactivate/{orderId}` (admin only)
+    - request static param: orderId, UUID
+    - response: { id, userId, total, orderStatus, createdAt, orderItems [ ], active, deleted }
 - `PATCH /orders/delete/{orderId}`
-
+    - request static param: orderId, UUID
+    -  response: stringa
 ---
 
 ### Actuator
@@ -245,7 +323,7 @@ Ogni microservizio espone endpoint Actuator (almeno health), ad esempio:
 - `quantity` (Long, min 1)
 - `unitPrice` (BigDecimal)
 - `order_id` (FK -> `orders.id`, not null)
-- vincolo unique su (`order_id`, `product_id`) *(come definito nell’entity attuale)*
+- vincolo unique su (`order_id`, `sku`) *(come definito nell’entity attuale)*
 
 ### notification-service (`messages`)
 - `id` (Long, PK)
@@ -255,13 +333,13 @@ Ogni microservizio espone endpoint Actuator (almeno health), ad esempio:
 ## Credenziali di test:
 - User:
     {
-      "username":"userTest",
-      "password":"user1234"
+      "username":"user1",
+      "password":"Password1-"
     }
   - Admin:
     {
-      "username":"user1",
-      "password":"1234"
+      "username":"admin1",
+      "password":"Password1-"
     }
 
 ## Acceptance Checklist
@@ -311,3 +389,4 @@ Ogni microservizio espone endpoint Actuator (almeno health), ad esempio:
 - [ ] Messaggistica Kafka OK:
   - [ ] `order-service` pubblica evento `order.created`
   - [ ] `notification-service` consuma evento (verificato da log)
+
